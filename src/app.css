@@ -1,0 +1,46 @@
+@import "./props.css";
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: 4px;
+
+    font-family: monospace;
+
+    display: grid;
+
+    line-height: 1;
+    color: var(--color-black);
+}
+
+input,
+button {
+    font-family: inherit;
+    font-size: inherit;
+    color: currentColor;
+
+    border-color: currentColor;
+    border-style: solid;
+    border-width: 1px;
+
+    border-radius: 2px;
+    background-color: transparent;
+}
+
+:where(input):active,
+:where(input):focus {
+    outline: 1px slateblue solid;
+    outline-offset: -2px;
+}
+
+button {
+    cursor: pointer;
+}

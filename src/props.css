@@ -1,0 +1,16 @@
+:root {
+    --color-white: #fff;
+    --color-black: #1f1f1f;
+    --color-gray-light: #ededed;
+    --color-info: #f3c37a;
+    --color-info-light: #f8d5ad;
+    --color-error: #e84136;
+}
+
+:root {
+    --shadow-0: 0 0 8px 0 #0001;
+}
+
+:root {
+    --module-width: 160px;
+}
