@@ -31,7 +31,7 @@
         if (!drag_state.dragged_module || !drag_state.dragged_chain) return;
 
         let children = [
-            ...e.currentTarget.querySelectorAll(".module[draggable]"),
+            ...e.currentTarget.querySelectorAll(".module"),
         ] as HTMLElement[];
 
         let closest = get_closest_element(children, e.clientY);
@@ -59,36 +59,65 @@
 </script>
 
 <div
-    class="chain"
+    class="chain stack border"
     ondragover={drag_over.bind(null, chain)}
     ondragstart={() => (drag_state.dragged_chain = chain)}
     ondragend={() => (drag_state.dragged_chain = null)}
 >
-    <header>header</header>
-    <div class="modules">
+    <header class="stack">
+        <div class="input stack">
+            <div class="cv stack">
+                <div>cvin&nbsp;</div>
+                <div class="pid">midi</div>
+                <div class="ch">4</div>
+            </div>
+            <div>|</div>
+            <div class="gt stack">
+                <div>gtin&nbsp;</div>
+                <div class="pid">adc</div>
+                <div class="ch">7</div>
+            </div>
+        </div>
+    </header>
+    <div class="modules stack">
         <slot />
     </div>
 </div>
 
-<style>
+<style lang="scss">
     .chain {
-        display: flex;
-        flex-direction: column;
+        padding: var(--gap-2);
+        gap: var(--gap-2);
+        box-shadow: var(--shadow-0);
+        background-color: var(--color-white);
     }
 
     header {
-        padding: 2px;
+        --direction: row;
+
+        align-self: normal;
+
+        padding-block: var(--gap-2);
+        border-radius: 1px;
+
         background-color: var(--color-gray-light);
-        border-radius: 2px;
+
+        justify-content: center;
+
+        font-size: var(--text-size-1);
+
+        .input {
+            --gap: var(--gap-2);
+            --direction: row;
+
+            > .stack {
+                --direction: row;
+            }
+        }
     }
 
     .modules {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        padding: 4px;
-        border: 1px var(--color-gray-light) solid;
         flex-grow: 1;
-        border-radius: 2px;
+        --gap: var(--gap-2);
     }
 </style>

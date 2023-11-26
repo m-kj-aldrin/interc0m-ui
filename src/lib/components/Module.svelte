@@ -5,10 +5,12 @@
         ChainState,
         NetworkState,
     } from "$lib/network-state.svelte";
+
     import { getContext } from "svelte";
     import Out from "./Out.svelte";
 
     import * as Operators from "./operators/index";
+    import Icon from "./icons/Icon.svelte";
 
     const network = getContext("network") as NetworkState;
 
@@ -39,172 +41,304 @@
         drag_state.dragged_module = null;
     }
 
-    function outs_filter(target_id: number) {
-        return network.outs.filter((out) => out.target_id == target_id);
+    function outs_filter() {
+        return network.outs.filter((out) => out.target_module == module);
     }
 
-    // let t = outs_filter(module.id);
+    let outs = $derived(outs_filter());
+
+    function toggle_dot_menu() {
+        module.dot_menu_open = !module.dot_menu_open;
+    }
+
+    let new_pid = $state(0);
+    let new_ch = $state(0);
+
+    function add_out() {
+        network.add_out(
+            { gate: { pid: new_pid, channel: new_ch } },
+            { chain_index: chain.index, module_index: module.index }
+        );
+    }
+
+    let bound_outside_handler: typeof click_outside;
+
+    function click_outside(e: MouseEvent) {
+        if (
+            !e
+                .composedPath()
+                .some((el) => el == dot_options || el == dot_button)
+        ) {
+            module.dot_menu_open = false;
+
+            window.removeEventListener("click", bound_outside_handler, {
+                capture: true,
+            });
+
+            bound_outside_handler = null;
+        }
+    }
+
+    let dot_options: HTMLElement;
+    let dot_button: HTMLElement;
+
+    function dot_menu_toggle(e: MouseEvent) {
+        if (module.dot_menu_open) {
+            module.dot_menu_open = false;
+
+            window.removeEventListener("click", bound_outside_handler, {
+                capture: true,
+            });
+            bound_outside_handler = null;
+            return;
+        }
+
+        module.dot_menu_open = true;
+
+        window.addEventListener(
+            "click",
+            (bound_outside_handler = click_outside),
+            { capture: true }
+        );
+    }
 </script>
 
 <div
-    class="module"
+    class="module stack border"
     class:dragged={module.dragged}
+    class:minimized={module.minimized}
     data-dnd-id={module.id}
-    draggable={drag_state.drag_available}
-    ondragstart={drag_start}
-    ondragend={drag_end}
 >
-    <header>
-        <div class="type">{module.type}</div>
+    <header
+        class="padding stack"
+        draggable={drag_state.drag_available}
+        ondragstart={drag_start}
+        ondragend={drag_end}
+    >
+        <div class="type">{module.type} idx: {module.index}</div>
 
         <div class="outs">
-            {@const outs = outs_filter(module.id)}
-            <div class="symbol" onclick={() => module.toggle_show_outs()}>
-                <svg
-                    width="8"
-                    height="8"
-                    viewBox="0 0 6 6"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                >
-                    <path
-                        d="M3 0.25V5.25M3 0.25H1M3 0.25H5M3 5.25L1 3.25M3 5.25L5 3.25"
-                        stroke="currentColor"
-                        stroke-width="0.5"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    />
-                </svg>
-                <div>{outs.length}</div>
-                {#if module.show_outs_list}
-                    <div class="outs-list">
-                        {#each outs as out (out.id)}
-                            <div class="out">
-                                <div>pid {out.destination.gate.pid}</div>
-                                <div>ch {out.destination.gate.channel}</div>
-                            </div>
-                        {/each}
+            <!-- {@const outs = outs_filter()} -->
+
+            <button class="symbol" onclick={() => module.toggle_show_outs()}>
+                <Icon type="out"></Icon>
+                <div class="count">{outs.length}</div>
+            </button>
+
+            {#if module.show_outs_list}
+                <div class="outs-list stack border padding">
+                    <div class="outs-controlls stack">
+                        <div class="new-out stack">
+                            <label>
+                                pid:<input
+                                    type="text"
+                                    bind:value={new_pid}
+                                    maxlength="2"
+                                />
+                            </label>
+
+                            <label>
+                                ch:<input
+                                    type="text"
+                                    bind:value={new_ch}
+                                    maxlength="2"
+                                />
+                            </label>
+                        </div>
+
+                        <button class="add-out" onclick={add_out}>
+                            <Icon type="plus"></Icon>
+                        </button>
                     </div>
-                {/if}
-            </div>
+
+                    {#if outs.length}
+                        <hr />
+
+                        <div class="stack">
+                            {#each outs as out (out.id)}
+                                <Out {out}></Out>
+                            {/each}
+                        </div>
+                    {/if}
+                </div>
+            {/if}
         </div>
 
-        <div class="module-controlls">
-            {#if module.type != "PTH"}
+        {#if module.type != "PTH"}
+            <div class="module-controlls stack">
                 <button
                     class="minimize-module"
                     onclick={toggle_minimize_module(module)}
                 />
-            {/if}
+            </div>
+        {/if}
+
+        <div class="dot-menu">
             <button
-                class="remove-module"
-                onclick={remove_module(module.id, chain)}
-            />
+                class="dots"
+                onclick={dot_menu_toggle}
+                bind:this={dot_button}
+            >
+                {#each { length: 3 } as i}
+                    <div class="dot"></div>
+                {/each}
+            </button>
+            {#if module.dot_menu_open}
+                <div class="stack border options" bind:this={dot_options}>
+                    <button
+                        class="remove-module"
+                        onclick={remove_module(module.id, chain)}>remove</button
+                    >
+                </div>
+            {/if}
         </div>
     </header>
 
     {#if !module.minimized && !(module.type == "PTH")}
-        <div class="operator">
-            <svelte:component this={Operators[module.type]}></svelte:component>
+        <div class="operator padding">
+            <svelte:component
+                this={Operators[module.type]}
+                parameters={module.parameters}
+            ></svelte:component>
         </div>
     {/if}
 </div>
 
-<style>
+<style lang="scss">
+    .padding {
+        padding: var(--gap-1);
+    }
+
     .module {
-        border-radius: 2px;
-        border: 1px var(--color-gray-light) solid;
-        display: flex;
-        gap: 2px;
-        flex-direction: column;
+        --gap: 0;
         background-color: var(--bg-color);
         box-shadow: var(--shadow-0);
         width: var(--module-width);
+        font-size: var(--text-size-1);
+
+        > header {
+            --gap: var(--gap-2);
+            --direction: row;
+            align-self: normal;
+
+            background-color: var(--color-gray-light);
+            padding-inline: var(--gap-2);
+        }
     }
 
-    .module.dragged {
-        border-color: var(--color-info);
-    }
-    .module.dragged header {
-        background-color: var(--color-info-light);
-    }
-
-    .module .type {
-        padding: 2px;
-        border-radius: 2px;
-    }
-
-    .module .operator {
-        padding: 4px;
-        border-radius: 2px;
-    }
-
-    .module header {
-        display: flex;
-        gap: 8px;
-        background-color: var(--color-gray-light);
-        padding: 2px;
-    }
-
-    .module header .outs {
+    .outs {
         margin-inline-start: auto;
+
+        .symbol {
+            border: none;
+            background-color: transparent;
+            padding: 0;
+            display: flex;
+            cursor: pointer;
+
+            > .count {
+                transform: translateY(0.75ex);
+                font-size: var(--text-size-0);
+            }
+        }
+
+        .outs-controlls {
+            --direction: row;
+            padding: var(--gap-1);
+            align-self: normal;
+            justify-content: space-between;
+
+            .new-out {
+                --direction: row;
+            }
+
+            .add-out {
+                display: grid;
+                padding: var(--gap-0);
+                color: var(--color-ok);
+            }
+        }
+
+        input {
+            max-width: 3ch;
+            text-align: center;
+        }
     }
 
-    .module header .outs .symbol {
-        display: flex;
-    }
-
-    .module header .outs .outs-list {
+    .outs-list {
         background-color: var(--color-white);
-        display: flex;
-        flex-direction: column;
         position: absolute;
-        padding: 2px;
-        border-radius: 2px;
-        border: 1px var(--color-gray-light) solid;
+        z-index: 10;
+        box-shadow: var(--shadow-0);
     }
 
-    .out {
-        display: flex;
-        gap: 2px;
+    .dot-menu {
+        .dots {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+
+            border: none;
+            background-color: transparent;
+
+            cursor: pointer;
+            padding: 2px;
+        }
+
+        .dot {
+            width: 0.5ch;
+            height: 0.5ch;
+            background-color: currentColor;
+            border-radius: 50%;
+        }
+
+        .options {
+            position: absolute;
+            padding: var(--gap-1);
+            background-color: var(--color-white);
+
+            .remove-module {
+                color: var(--color-error);
+            }
+        }
     }
 
-    .module .footer {
-        background-color: white;
-        padding-inline: 4px;
-        border-radius: 2px;
-    }
-
-    .module :where(header, .footer) {
-        font-size: 10px;
-    }
-
-    .module .module-controlls {
-        display: flex;
+    .module-controlls {
+        --direction: row;
         align-items: center;
 
-        /* margin-inline-start: auto; */
-        gap: 2px;
+        button {
+            width: 1.25ch;
+            height: 1.25ch;
+            border-radius: 50%;
+            border: none;
+            background-color: currentColor;
+            padding: 0;
+
+            &.minimize-module {
+                background-color: var(--color-info);
+            }
+        }
     }
 
-    .module .module-controlls button {
-        width: 1ch;
-        height: 1ch;
-        border-radius: 50%;
-        border: none;
-        background-color: currentColor;
-        padding: 0;
+    .module.minimized {
+        button.minimize-module {
+            background-color: var(--color-ok);
+        }
     }
 
-    .module-controlls button.remove-module {
-        background-color: red;
-    }
-
-    .module-controlls button.minimize-module {
-        background-color: orange;
-    }
-
-    .module .operator {
+    .operator {
         background-color: white;
+        padding: var(--gap-2);
+        align-self: normal;
+    }
+
+    /* DRAGGED */
+    .dragged {
+        border-color: var(--color-info);
+
+        header {
+            background-color: var(--color-info-light);
+        }
     }
 </style>

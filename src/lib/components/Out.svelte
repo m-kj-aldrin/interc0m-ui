@@ -1,158 +1,81 @@
 <script lang="ts">
-    import type {
-        ChainState,
-        ModuleState,
-        NetworkState,
-    } from "$lib/network-state.svelte";
+    import type { NetworkState, OutState } from "$lib/network-state.svelte";
     import { getContext } from "svelte";
+    import Icon from "./icons/Icon.svelte";
     import type { ChangeEventHandler } from "svelte/elements";
 
-    let { module, chain } = $props<{
-        module: ModuleState;
-        chain: ChainState;
-    }>();
+    let network = getContext("network") as NetworkState;
 
-    const network = getContext("network") as NetworkState;
+    let { out } = $props<{ out: OutState }>();
 
-    function outs_filter(target_id: number) {
-        return network.outs.filter((out) => out.target_id == target_id);
+    let new_pid = $state(0);
+    let new_ch = $state(0);
+
+    function remove_out() {
+        network.remove_out(out.id);
     }
 
-    function remove_out(id: number) {
-        return function () {
-            network.remove_out(id);
-        };
-    }
+    type ChangeEvent = Event & {
+        currentTarget: EventTarget & HTMLInputElement;
+    };
 
-    function update_out(id: number, target: "pid" | "channel") {
-        const fn: ChangeEventHandler<HTMLInputElement> = (e) => {
-            let value = +e.currentTarget.value;
+    function update_pid(e: ChangeEvent) {
+        let value = +e.currentTarget.value;
 
-            network.update_out(id, {
-                gate: {
-                    [target]: value,
-                },
-            });
-        };
-
-        return fn;
-    }
-
-    function add_out() {
-        network.add_out(
-            { gate: { pid: 0, channel: 0 } },
-            {
-                chain_index: chain.index,
-                module_index: module.index,
-            }
-        );
+        network.update_out(out.id, {
+            gate: {
+                pid: value,
+            },
+        });
     }
 </script>
 
-<div class="outs">
-    {@const outs = outs_filter(module.id)}
-
-    <div class="outs-symbols">
-        <button class="show-list" onclick={() => module.toggle_show_outs()}
-            >&#9881;</button
-        >
-        <div>
-            {#each outs.slice(0, 5) as out (out.id)}
-                <div class="out-symbol">&DownArrow;</div>
-            {/each}
-            {#if outs.length > 5}
-                <div>&hellip;</div>
-            {/if}
-        </div>
+<div class="out padding stack">
+    <div class="destination stack">
+        <label>
+            pid:<input
+                onchange={update_pid}
+                type="text"
+                value={out.destination.gate.pid}
+                maxlength="2"
+            />
+        </label>
+        <label>
+            ch:<input
+                type="text"
+                bind:value={out.destination.gate.channel}
+                maxlength="2"
+            />
+        </label>
     </div>
-
-    {#if module.show_outs_list}
-        <div class="outs-list">
-            <button onclick={add_out}>add</button>
-            {#each outs as out (out.id)}
-                <div class="out-li">
-                    <div class="destination">
-                        <label>
-                            pid:
-                            <input
-                                type="text"
-                                maxlength="2"
-                                onchange={update_out(out.id, "pid")}
-                                value={out.destination.gate.pid}
-                            />
-                        </label>
-                        <label>
-                            ch:
-                            <input
-                                type="text"
-                                maxlength="2"
-                                onchange={update_out(out.id, "channel")}
-                                value={out.destination.gate.channel}
-                            />
-                        </label>
-                    </div>
-                    <button class="remove-out" onclick={remove_out(out.id)}
-                        >&Cross;</button
-                    >
-                </div>
-            {/each}
-        </div>
-    {/if}
+    <!-- <div>i: {out.index}</div> -->
+    <button class="remove-out" onclick={remove_out}>
+        <Icon type="cross"></Icon>
+    </button>
 </div>
 
 <style>
-    .outs-symbols,
-    .outs-symbols > div,
-    .outs-list,
-    .out-li {
-        display: flex;
-        gap: 2px;
+    .out {
+        --direction: row;
+        background-color: var(--color-gray-lightest);
     }
 
-    .outs-list {
-        flex-direction: column;
+    .remove-out {
+        display: grid;
+        padding: var(--gap-0);
+        color: var(--color-error);
     }
 
-    .out-li,
-    .outs-list {
-        border: 1px currentColor solid;
-        padding: 2px;
-        border-radius: 2px;
+    .padding {
+        padding: var(--gap-1);
     }
 
-    .out-symbol {
-        margin-inline-start: -0.5ch;
+    .destination {
+        --direction: row;
     }
 
-    .outs-symbols > div {
-        margin-inline-start: auto;
-        align-items: center;
-    }
-
-    .outs-symbols button.show-list {
-        padding: 0;
-        border: none;
-        font-size: 1.25em;
-        /* line-height: 0.5; */
-    }
-
-    .outs-list {
-        margin-top: 2px;
-        position: absolute;
-        background-color: white;
-    }
-
-    .out-li {
-        align-items: center;
-        background-color: white;
-    }
-
-    .out-li .destination input {
+    input {
         max-width: 3ch;
         text-align: center;
-    }
-
-    .out-li .remove-out {
-        color: red;
     }
 </style>

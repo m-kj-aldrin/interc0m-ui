@@ -1,11 +1,10 @@
 <script lang="ts">
     import "../app.css";
-    import { NetworkState } from "$lib/network-state.svelte";
-    import { setContext, tick } from "svelte";
+    import { NetworkState, ParameterState } from "$lib/network-state.svelte";
+    import { setContext } from "svelte";
     import Module from "$lib/components/Module.svelte";
     import Chain from "$lib/components/Chain.svelte";
-    import { slide } from "svelte/transition";
-    import { flip } from "svelte/animate";
+
     NetworkState.clear_counter();
 
     let network = new NetworkState();
@@ -25,17 +24,12 @@
 
     network.add_chain().add_module(["BCH", "PRO"]);
 
-    tick().then(() => {
-        network.update_out(0, {
-            gate: {
-                pid: 8,
-                channel: 2,
-            },
-        });
-    });
+    // network.chains[0].modules[1].parameters[0] = new ParameterState(0.25);
+
+    // network.chains[0].modules[0].show_outs_list = true;
 </script>
 
-<div class="chains" ondragover={(e) => e.preventDefault()}>
+<div class="chains stack" ondragover={(e) => e.preventDefault()}>
     {#each network.chains as chain (chain.id)}
         <Chain {chain}>
             {#each chain.modules as module (module.id)}
@@ -47,7 +41,8 @@
 
 <style>
     .chains {
-        display: flex;
-        gap: 4px;
+        --direction: row;
+        align-items: normal;
+        gap: var(--gap-2);
     }
 </style>

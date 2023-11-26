@@ -1,16 +1,25 @@
 :root {
     --color-white: #fff;
     --color-black: #1f1f1f;
-    --color-gray-light: #ededed;
-    --color-info: #f3c37a;
+    --color-gray-lightest: #f7f7f7;
+    --color-gray-light: #dfdfdf;
+    --color-info: #ecb461;
     --color-info-light: #f8d5ad;
-    --color-error: #e84136;
+    --color-error: #e85636;
+    --color-ok: #6ac662;
 }
 
 :root {
-    --shadow-0: 0 0 8px 0 #0001;
+    --shadow-0: 0 0 12px 0px hsla(0 0% 0% / 0.05);
 }
 
 :root {
-    --module-width: 160px;
+    --module-width: 228px;
+
+    --text-size-0: 8px;
+    --text-size-1: 10px;
+
+    --gap-0: 2px;
+    --gap-1: 4px;
+    --gap-2: 8px;
 }

@@ -11,7 +11,7 @@ body {
 
 body {
     margin: 0;
-    padding: 4px;
+    padding: var(--gap-2);
 
     font-family: monospace;
 
@@ -43,4 +43,84 @@ button {
 
 button {
     cursor: pointer;
+    background-color: white;
+}
+
+input {
+    font-family: inherit;
+    font-size: inherit;
+    color: currentColor;
+    border: none;
+}
+
+.stack {
+    --direction: column;
+    --gap: var(--gap-1);
+
+    display: flex;
+    flex-direction: var(--direction);
+    gap: var(--gap);
+
+    align-items: center;
+}
+
+.border {
+    border-radius: 1px;
+    border: 1px var(--color-gray-light) solid;
+}
+
+hr {
+    color: var(--color-gray-light);
+    border: none;
+    border-bottom: 1px currentColor solid;
+    width: 100%;
+    margin: 0;
+}
+
+
+input[type="range"] {
+    cursor: pointer;
+    -webkit-appearance: none;
+    background-color: transparent;
+}
+
+input[type="range"]:active {
+    /* color: cornflowerblue; */
+}
+
+input[type="range"]:focus {
+    outline: none;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 2px;
+    background: currentColor;
+    border-radius: 40px;
+}
+input[type="range"]::-webkit-slider-thumb {
+    height: 8px;
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    background: currentColor;
+    -webkit-appearance: none;
+    margin-top: -3px;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+}
+
+input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 2px;
+    background: currentColor;
+    border-radius: 40px;
+}
+
+input[type="range"]::-moz-range-thumb {
+    height: 8px;
+    width: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    margin-top: -3px;
+    border: none;
 }
