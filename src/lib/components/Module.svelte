@@ -115,7 +115,7 @@
         ondragstart={drag_start}
         ondragend={drag_end}
     >
-        <div class="type">{module.type} idx: {module.index}</div>
+        <div class="type">{module.type}</div>
 
         <div class="outs">
             <!-- {@const outs = outs_filter()} -->
@@ -217,12 +217,16 @@
         font-size: var(--text-size-1);
 
         > header {
+            cursor: move;
             --gap: var(--gap-2);
             --direction: row;
             align-self: normal;
 
             background-color: var(--color-gray-light);
             padding-inline: var(--gap-2);
+            &:hover {
+                background-color: var(--color-gray-lightest);
+            }
         }
     }
 
@@ -338,7 +342,7 @@
         border-color: var(--color-info);
 
         header {
-            background-color: var(--color-info-light);
+            background-color: var(--color-info-light) !important;
         }
     }
 </style>
