@@ -67,15 +67,19 @@ class NetworkState {
 
         if (moved_module_index == -1) return false;
 
-        // console.log('move');
-        
+        console.log('move');
 
         // if (from_chain == to_chain && moved_module_index == target_index - 1)
         //     return false;
 
         let moved_module = from_chain.modules.splice(moved_module_index, 1)[0];
         if (from_chain == to_chain) {
-            from_chain.modules.splice(moved_module_index, 0, null);
+            // from_chain.modules.splice(moved_module_index, 0, null);
+        }
+
+        if (from_chain != to_chain) {
+            // from_chain.modules = from_chain.modules;
+            from_chain.index_modules();
         }
 
         let remove_c_idx = from_chain.index;
@@ -85,9 +89,9 @@ class NetworkState {
 
         to_chain.modules.splice(target_index, 0, moved_module);
 
-        from_chain.modules = from_chain.modules.filter(
-            (module) => module != null
-        );
+        // from_chain.modules = from_chain.modules.filter(
+        //     (module) => module != null
+        // );
 
         to_chain.index_modules();
 
@@ -331,7 +335,7 @@ export class ParameterState {
     update() {
         let c_idx = this.parent_module.parent_chain?.index;
         let m_idx = this.parent_module.index;
-        console.log(`-p ${c_idx}:${m_idx} ${this.value}`);
+        // console.log(`-p ${c_idx}:${m_idx} ${this.value}`);
     }
 }
 

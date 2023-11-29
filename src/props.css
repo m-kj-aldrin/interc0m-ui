@@ -1,6 +1,6 @@
 :root {
-    --color-white: #fff;
-    --color-black: #1f1f1f;
+    --color-white: hsl(0, 0%, 99%);
+    --color-black: #141414;
     --color-gray-lightest: #e8e8e8;
     --color-gray-light: #dfdfdf;
     --color-info: #ecb461;
@@ -10,7 +10,7 @@
 }
 
 :root {
-    --shadow-0: 0 0 12px 0px hsla(0 0% 0% / 0.05);
+    --shadow-0: 0 0 8px 0px hsla(0 0% 0% / 0.03);
 }
 
 :root {
@@ -22,4 +22,5 @@
     --gap-0: 2px;
     --gap-1: 4px;
     --gap-2: 8px;
+    --gap-3: 16px;
 }
