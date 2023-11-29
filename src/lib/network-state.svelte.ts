@@ -67,8 +67,11 @@ class NetworkState {
 
         if (moved_module_index == -1) return false;
 
-        if (from_chain == to_chain && moved_module_index == target_index - 1)
-            return false;
+        // console.log('move');
+        
+
+        // if (from_chain == to_chain && moved_module_index == target_index - 1)
+        //     return false;
 
         let moved_module = from_chain.modules.splice(moved_module_index, 1)[0];
         if (from_chain == to_chain) {
@@ -78,7 +81,7 @@ class NetworkState {
         let remove_c_idx = from_chain.index;
         let remove_m_idx = moved_module.index;
 
-        console.log(`m -r ${remove_c_idx}:${remove_m_idx}`);
+        // console.log(`m -r ${remove_c_idx}:${remove_m_idx}`);
 
         to_chain.modules.splice(target_index, 0, moved_module);
 
@@ -90,7 +93,7 @@ class NetworkState {
 
         let added_c_idx = to_chain.index;
         let added_m_idx = moved_module.index;
-        console.log(`m -i ${added_c_idx}:${added_m_idx}`);
+        // console.log(`m -i ${added_c_idx}:${added_m_idx}`);
 
         let [removed_outs, intact_outs] = this._outs.reduce(
             (acc, out, index) => {
@@ -115,7 +118,7 @@ class NetworkState {
                 })
                 .join("\n");
 
-            console.log(r_str);
+            // console.log(r_str);
 
             let addStr = removed_outs
                 .map(
@@ -124,7 +127,7 @@ class NetworkState {
                 )
                 .join("\n");
 
-            console.log(addStr);
+            // console.log(addStr);
         }
 
         intact_outs.forEach((out, index) => (out.index = index));
@@ -153,9 +156,9 @@ class NetworkState {
 
         this._outs = [...this._outs, new_out];
 
-        console.log(
-            `o -a ${target.chain_index}:${target.module_index}:${destination.gate.pid}:${destination.gate.channel}:${destination.gate.pid}:${destination.gate.channel}`
-        );
+        // console.log(
+        //     `o -a ${target.chain_index}:${target.module_index}:${destination.gate.pid}:${destination.gate.channel}:${destination.gate.pid}:${destination.gate.channel}`
+        // );
 
         return new_out;
     }
@@ -198,7 +201,7 @@ class NetworkState {
         // THE POSITION OF THE OUTS NEEDS TO STAY INTACT
         // ORELSE THEY WILL CHANGE ORDER IN THE UI
 
-        console.log(updated_out.index);
+        // console.log(updated_out.index);
 
         // let o = this._outs.splice(updated_out.index, 1)[0];
         // this._outs.push(o);
@@ -255,7 +258,7 @@ class ChainState {
 
         let removed_module = this.modules.splice(removed_module_index, 1)[0];
 
-        console.log(removed_module.parent_chain?.index, removed_module.index);
+        // console.log(removed_module.parent_chain?.index, removed_module.index);
 
         this.modules = this.modules;
 
