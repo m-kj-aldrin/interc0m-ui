@@ -67,7 +67,7 @@ class NetworkState {
 
         if (moved_module_index == -1) return false;
 
-        console.log('move');
+        // console.log('move');
 
         // if (from_chain == to_chain && moved_module_index == target_index - 1)
         //     return false;
