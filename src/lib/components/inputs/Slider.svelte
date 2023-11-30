@@ -1,8 +1,5 @@
 <script lang="ts">
     import bucket from "$lib/bucket.svelte";
-    import { ModuleState } from "$lib/network-state.svelte";
-    import { cubicInOut, quadInOut } from "svelte/easing";
-    import { tweened } from "svelte/motion";
 
     let {
         value,
@@ -46,6 +43,8 @@
         e.currentTarget.addEventListener("pointermove", pointer_move);
         e.currentTarget.addEventListener("pointerup", pointer_up);
 
+        let tresholded = false;
+
         function pointer_move(e: PEvent) {
             mouse.x = (e.clientX - box.x) / box.width;
             mouse.y = (e.clientY - box.y) / box.height;
@@ -53,8 +52,17 @@
             c_x = clamp01(mouse.x);
             x.value = c_x;
 
-            //   e.currentTarget.dispatchEvent(new InputEvent("change", {}));
+            if (c_x < 1 && c_x > 0) {
+                tresholded = false;
+            }
+
+            if (tresholded) return;
+
             onchange(c_x);
+
+            if (c_x >= 1 || c_x <= 0) {
+                tresholded = true;
+            }
         }
 
         function pointer_up(e: PEvent) {
@@ -79,19 +87,20 @@
             ></rect>
         {/if}
         <g transform="translate(32 12)">
-            <text
-                dy="0"
-                font-size="10"
-                text-anchor="middle"
-                alignment-baseline="middle">{x.value.toFixed(4)}</text
-            >
+            <text dy="0" font-size="10" text-anchor="middle">
+                {x.value.toFixed(4)}
+            </text>
         </g>
     </g>
 </svg>
 
 <style>
     rect.bar {
-        fill: color-mix(in oklab, rgb(241, 221, 88), #66df5b calc(var(--x, 0) * 100%));
+        fill: color-mix(
+            in oklab,
+            rgb(241, 221, 88),
+            #66df5b calc(var(--x, 0) * 100%)
+        );
     }
 
     svg {

@@ -28,6 +28,16 @@
             },
         });
     }
+
+    function update_ch(e: ChangeEvent) {
+        let value = +e.currentTarget.value;
+
+        network.update_out(out.id, {
+            gate: {
+                channel: value,
+            },
+        });
+    }
 </script>
 
 <div class="out padding stack">
@@ -42,13 +52,13 @@
         </label>
         <label>
             ch:<input
+                onchange={update_ch}
                 type="text"
-                bind:value={out.destination.gate.channel}
+                value={out.destination.gate.channel}
                 maxlength="2"
             />
         </label>
     </div>
-    <!-- <div>i: {out.index}</div> -->
     <button class="remove-out" onclick={remove_out}>
         <Icon type="cross"></Icon>
     </button>

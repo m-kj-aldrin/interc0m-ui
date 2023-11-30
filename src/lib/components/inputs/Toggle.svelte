@@ -1,18 +1,26 @@
 <script lang="ts">
-  let { toggle } = $props<{ toggle: boolean }>();
+    import type { Snippet } from "svelte";
 
-  let s = $state(toggle);
+    let { toggle, onchange } = $props<{
+        toggle: boolean;
+        onchange?: (value: boolean) => void;
+        children?: Snippet;
+    }>();
 
-  function on_toggle() {
-    s = !s;
-  }
+    let s = $state(toggle);
+
+    function on_toggle() {
+        s = !s;
+        onchange?.(s);
+    }
 </script>
 
 <button class:toggle={s} onclick={on_toggle}><slot /></button>
 
 <style>
-  button.toggle {
-    background-color: var(--color-black);
-    color: var(--color-white);
-  }
+    button:where(.toggle, :active) {
+        background-color: var(--color-black);
+        color: var(--color-white);
+        border-color: var(--color-black);
+    }
 </style>

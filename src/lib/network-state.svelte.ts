@@ -1,4 +1,3 @@
-import { tick } from "svelte";
 import { drag_state } from "./drag-state.svelte";
 
 type RecursivePartial<T> = {
@@ -40,6 +39,9 @@ class NetworkState {
 
         this._chains = [...this._chains, new_chain];
 
+        let str = `c -n`;
+        console.log(str);
+
         return new_chain;
     }
 
@@ -51,6 +53,9 @@ class NetworkState {
                 (chain) => chain != removed_chain
             );
         }
+
+        let str = `c -r ${removed_chain?.index}`;
+        console.log(str);
     }
 
     move_module(
@@ -78,26 +83,18 @@ class NetworkState {
         }
 
         if (from_chain != to_chain) {
-            // from_chain.modules = from_chain.modules;
             from_chain.index_modules();
         }
 
-        let remove_c_idx = from_chain.index;
-        let remove_m_idx = moved_module.index;
-
-        // console.log(`m -r ${remove_c_idx}:${remove_m_idx}`);
+        let removed_module_str = `m -c ${moved_module.parent_chain?.index} -r ${moved_module.index}`;
+        console.log(removed_module_str);
 
         to_chain.modules.splice(target_index, 0, moved_module);
 
-        // from_chain.modules = from_chain.modules.filter(
-        //     (module) => module != null
-        // );
-
         to_chain.index_modules();
 
-        let added_c_idx = to_chain.index;
-        let added_m_idx = moved_module.index;
-        // console.log(`m -i ${added_c_idx}:${added_m_idx}`);
+        let added_module_str = `m -c ${to_chain.index} -i ${moved_module.index}:${moved_module.type}`;
+        console.log(added_module_str);
 
         let [removed_outs, intact_outs] = this._outs.reduce(
             (acc, out, index) => {
@@ -115,23 +112,23 @@ class NetworkState {
 
         if (removed_outs.length) {
             let removed_out_inddices = removed_outs.map((out) => out.index);
-            let r_str = removed_out_inddices
+            let removed_outs_str = removed_out_inddices
                 .map((out) => {
                     let str = `o -r ${out}`;
                     return str;
                 })
                 .join("\n");
 
-            // console.log(r_str);
+            console.log(removed_outs_str);
 
-            let addStr = removed_outs
+            let added_outs_str = removed_outs
                 .map(
                     ({ destination: { gate } }) =>
-                        `o -a ${to_chain.index}:${moved_module.index}:${gate.pid}:${gate.channel}`
+                        `o -n ${gate.pid}:${gate.channel}:${to_chain.index}:${moved_module.index}:${to_chain.index}:${moved_module.index}`
                 )
                 .join("\n");
 
-            // console.log(addStr);
+            console.log(added_outs_str);
         }
 
         intact_outs.forEach((out, index) => (out.index = index));
@@ -160,9 +157,8 @@ class NetworkState {
 
         this._outs = [...this._outs, new_out];
 
-        // console.log(
-        //     `o -a ${target.chain_index}:${target.module_index}:${destination.gate.pid}:${destination.gate.channel}:${destination.gate.pid}:${destination.gate.channel}`
-        // );
+        let added_str = `o -n ${destination.gate.pid}:${destination.gate.channel}:${target_chain.index}:${target_module.index}:${target_chain.index}:${target_module.index}`;
+        console.log(added_str);
 
         return new_out;
     }
@@ -174,14 +170,10 @@ class NetworkState {
 
         let removed_out = this._outs.splice(removed_out_index, 1)[0];
 
-        console.log(removed_out.index);
+        let removed_out_str = `o -r ${removed_out.index}`;
+        console.log(removed_out_str);
 
         this.index_outs(removed_out.index);
-        // let target_module = removed_out.target_module
-        // let c_idx = target_module?.parent_chain?.index
-        // let m_idx = target_module?.index
-
-        this._outs = this._outs;
 
         return removed_out;
     }
@@ -201,18 +193,16 @@ class NetworkState {
             },
         };
 
-        // TODO - !!!
-        // THE POSITION OF THE OUTS NEEDS TO STAY INTACT
-        // ORELSE THEY WILL CHANGE ORDER IN THE UI
-
-        // console.log(updated_out.index);
-
-        // let o = this._outs.splice(updated_out.index, 1)[0];
-        // this._outs.push(o);
-
-        this._outs = this._outs;
+        let removed_out_str = `o -r ${updated_out.index}`;
+        console.log(removed_out_str);
 
         this.index_outs(updated_out.index);
+
+        let target_chain = updated_out.target_module?.parent_chain;
+        let target_module = updated_out.target_module;
+
+        let added_out_str = `o -n ${updated_out.destination.gate.pid}:${updated_out.destination.gate.channel}:${target_chain.index}:${target_module.index}:${target_chain.index}:${target_module.index}`;
+        console.log(added_out_str);
 
         updated_out.index = this._outs.length - 1;
     }
@@ -250,6 +240,11 @@ class ChainState {
 
         this.modules = [...this.modules, ...new_module];
 
+        let str = new_module
+            .map((module) => `m -c ${this.index} -a ${module.type}`)
+            .join("\n");
+        console.log(str);
+
         return new_module;
     }
 
@@ -264,17 +259,31 @@ class ChainState {
 
         // console.log(removed_module.parent_chain?.index, removed_module.index);
 
-        this.modules = this.modules;
+        let str = `m -c ${this.index} -r ${removed_module.index}`;
+        console.log(str);
+
+        // this.modules = this.modules;
+        this.index_modules();
 
         return removed_module;
     }
 }
 
 export type ModuleTypeMap = {
-    PTH: {};
-    LFO: {};
-    BCH: {};
-    PRO: {};
+    PTH: [];
+    LFO: [
+        { name: "frequency"; value: number },
+        { name: "span"; value: number },
+        { name: "phase"; value: number },
+        { name: "offset"; value: number },
+        { name: "wave select"; value: 0 | 1 | 2 | 3 | 4 },
+        { name: "duty cycle"; value: number },
+        { name: "reset"; value: number },
+        { name: "mode"; value: 0 | 1 },
+        { name: "hold"; value: boolean }
+    ];
+    BCH: [];
+    PRO: [];
 };
 
 class ModuleState {
@@ -293,8 +302,13 @@ class ModuleState {
     constructor(type: keyof ModuleTypeMap) {
         this.type = type;
 
-        this.parameters = module_type_map[type].map((struct) => {
-            let param = new ParameterState(struct.name, struct.value, this);
+        this.parameters = module_type_map[type].map((struct, index) => {
+            let param = new ParameterState(
+                struct.name,
+                struct.value,
+                index,
+                this
+            );
             return param;
         });
     }
@@ -309,33 +323,61 @@ class ModuleState {
     }
 }
 
-const module_type_map = {
+const module_type_map: ModuleTypeMap = {
     PTH: [],
     PRO: [],
     BCH: [],
     LFO: [
-        { name: "offset", value: 0 },
-        { name: "span", value: 0.25 },
+        { name: "frequency", value: 0.1 },
+        { name: "span", value: 0.5 },
         { name: "phase", value: 0 },
-        { name: "frequency", value: 0.75 },
+        { name: "offset", value: 0 },
+        { name: "wave select", value: 1 },
+        { name: "duty cycle", value: 0 },
+        { name: "reset", value: 0 },
+        { name: "mode", value: 0 },
+        { name: "hold", value: false },
     ],
 };
 
+function debounce(window: number = 25) {
+    let timeout_id: number;
+    return function async(fn: (...args: any) => any) {
+        clearTimeout(timeout_id);
+        timeout_id = setTimeout(() => {
+            fn();
+        }, window);
+    };
+}
+
 export class ParameterState {
-    value = $state<number | string>();
+    value = $state<number>(0);
     name: string;
     parent_module: ModuleState;
+    index: number;
+    bouncer: ReturnType<typeof debounce>;
 
-    constructor(name: string, value: number | string, module: ModuleState) {
+    constructor(
+        name: string,
+        value: number,
+        index: number,
+        module: ModuleState
+    ) {
         this.name = name;
         this.value = value;
+        this.index = index;
         this.parent_module = module;
+        this.bouncer = debounce();
     }
 
     update() {
         let c_idx = this.parent_module.parent_chain?.index;
         let m_idx = this.parent_module.index;
-        // console.log(`-p ${c_idx}:${m_idx} ${this.value}`);
+        this.bouncer(() => {
+            console.log(
+                `p -m ${c_idx}:${m_idx} -p ${this.index}:${this.value}`
+            );
+        });
     }
 }
 

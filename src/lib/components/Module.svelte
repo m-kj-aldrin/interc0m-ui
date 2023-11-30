@@ -121,8 +121,6 @@
         <div class="type">{module.type}</div>
 
         <div class="outs">
-            <!-- {@const outs = outs_filter()} -->
-
             <button class="symbol" onclick={() => module.toggle_show_outs()}>
                 <Icon type="out"></Icon>
                 <div class="count">{outs.length}</div>
