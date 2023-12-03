@@ -132,7 +132,7 @@
                 </label>
             </div>
         </div>
-        <!-- <button onclick={() => chain.remove()}>remove</button> -->
+        <button class="remove-chain" onclick={() => chain.remove()}>&Cross;</button>
         <!-- <div>idx: {chain.index}</div> -->
     </header>
     <div class="modules stack">
@@ -194,6 +194,14 @@
                 --direction: row;
             }
         }
+    }
+
+    .remove-chain{
+        color: var(--color-error);
+        width: 3ch;
+        height: 3ch;
+        display: grid;
+        place-content: center;
     }
 
     .modules {

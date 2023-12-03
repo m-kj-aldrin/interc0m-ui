@@ -583,6 +583,21 @@ class OutState {
         return this.parent.remove_out(this);
     }
 
+    update(destination: Partial<PeriphialUnion>) {
+        this.parent._outs.splice(this.index, 1);
+        this.detach();
+
+        this.index = this.parent._outs.length;
+        this.destination = {
+            ...this.destination,
+            ...destination,
+        };
+
+        this.parent._outs = [...this.parent._outs, this];
+
+        this.attach();
+    }
+
     attach() {
         if (this.attached) return;
         let c_idx = this.target_module?.parent.index;

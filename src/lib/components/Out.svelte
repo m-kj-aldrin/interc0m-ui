@@ -8,19 +8,25 @@
     let new_ch = $state(0);
 
     type ChangeEvent = Event & {
-        currentTarget: EventTarget & HTMLInputElement;
+        currentTarget: EventTarget & HTMLElement;
+        target: HTMLInputElement;
     };
 
-    function update_pid(e: ChangeEvent) {}
+    function update_out(e: ChangeEvent) {
+        let type = e.target.name;
+        let value = +e.target.value;
 
-    function update_ch(e: ChangeEvent) {}
+        out.update({
+            [type]: value,
+        });
+    }
 </script>
 
 <div class="out padding stack">
-    <div class="destination stack">
+    <div class="destination stack" onchange={update_out}>
         <label>
             pid:<input
-                onchange={update_pid}
+                name="pid"
                 type="text"
                 value={out.destination.pid}
                 maxlength="2"
@@ -28,7 +34,7 @@
         </label>
         <label>
             ch:<input
-                onchange={update_ch}
+                name="channel"
                 type="text"
                 value={out.destination.channel}
                 maxlength="2"
