@@ -1,510 +1,427 @@
 import { drag_state } from "./drag-state.svelte";
 
+// TODO - Tree / TreeWalker
+// We need a network-tree, so we can walk up and down through chains-modules-outs
+
 type RecursivePartial<T> = {
-  [P in keyof T]?: RecursivePartial<T[P]>;
+    [P in keyof T]?: RecursivePartial<T[P]>;
 };
 
 class NetworkState {
-  private _chains = $state<ChainState[]>([]);
-  private _outs = $state<OutState[]>([]);
+    private _chains = $state<ChainState[]>([]);
+    _outs = $state<OutState[]>([]);
+    _detached_outs = $state<OutState[]>([]);
 
-  constructor() {}
+    constructor() {
+        $effect(() => {
+            this._chains.forEach((chain, index) => (chain.index = index));
+        });
 
-  reset() {
-    this._chains = [];
-    this._outs = [];
-  }
-
-  get chains() {
-    return this._chains;
-  }
-
-  get outs() {
-    return this._outs;
-  }
-
-  static clear_counter() {
-    ChainState.id_counter = 0;
-    ModuleState.id_counter = 0;
-    OutState.id_counter = 0;
-  }
-
-  private index_outs(index: number) {
-    this._outs = this._outs.map((out) => {
-      if (out.index > index) {
-        out.index -= 1;
-      }
-      return out;
-    });
-  }
-
-  add_chain() {
-    let new_chain = new ChainState(this);
-    new_chain.index = this._chains.length;
-
-    this._chains = [...this._chains, new_chain];
-
-    new_chain.attach();
-
-    return new_chain;
-  }
-
-  remove_chain(id: number) {
-    let removed_chain = this._chains.find((chain) => chain.id == id);
-
-    if (removed_chain) {
-      this._chains = this._chains.filter((chain) => chain != removed_chain);
-
-      let modules = removed_chain.modules;
-
-      let [moved_outs, intact_outs] = this._outs.reduce(
-        (acc, out, index) => {
-          if (modules.some((m) => m == out.target_module)) {
-            acc[0].push(out);
-            return acc;
-          }
-
-          acc[1].push(out);
-
-          return acc;
-        },
-        [[], []] as [OutState[], OutState[]]
-      );
-
-      intact_outs.forEach((out, index) => (out.index = index));
-
-      moved_outs.forEach((o) => o.dettach());
-
-      removed_chain.dettach();
-    }
-  }
-
-  move_module(
-    module_id: number,
-    target_index: number,
-    from_chain: ChainState,
-    to_chain: ChainState
-  ) {
-    if (!from_chain || !to_chain) return false;
-
-    let moved_module_index = from_chain.modules.findIndex(
-      (module) => module.id == module_id
-    );
-
-    if (moved_module_index == -1) return false;
-
-    let moved_module = from_chain.modules.splice(moved_module_index, 1)[0];
-
-    if (from_chain != to_chain) {
-      from_chain.index_modules();
+        $effect(() => {
+            this._outs.forEach((out, index) => (out.index = index));
+        });
     }
 
-    moved_module.dettach();
+    reset() {
+        this._chains = [];
+        this._outs = [];
+    }
 
-    to_chain.modules.splice(target_index, 0, moved_module);
+    get chains() {
+        return this._chains;
+    }
 
-    to_chain.index_modules();
+    get outs() {
+        return this._outs;
+    }
 
-    moved_module.attach();
+    static clear_counter() {
+        ChainState.id_counter = 0;
+        ModuleState.id_counter = 0;
+        OutState.id_counter = 0;
+    }
 
-    let [moved_outs, intact_outs] = this._outs.reduce(
-      (acc, out, index) => {
-        if (out.target_module == moved_module) {
-          acc[0].push(out);
-          return acc;
+    add_chain(confing?: any) {
+        let new_chain = new ChainState(this, this._chains.length);
+        this._chains = [...this._chains, new_chain];
+        new_chain.attach();
+
+        return new_chain;
+    }
+
+    remove_chain(index: number | ChainState) {
+        let removed_chain: ChainState;
+
+        if (index instanceof ChainState) {
+            let _index = this._chains.findIndex((chain) => chain == index);
+            removed_chain = this._chains.splice(_index, 1)[0];
+            removed_chain.index = _index;
+        } else {
+            removed_chain = this._chains.splice(index, 1)[0];
         }
 
-        acc[1].push(out);
+        this._chains = this._chains;
 
-        return acc;
-      },
-      [[], []] as [OutState[], OutState[]]
-    );
+        let modules = removed_chain.modules;
+        let target_outs = [
+            ...this._outs.filter((out) =>
+                modules.some((module) => out.target_module == module)
+            ),
+            ...this._detached_outs.filter((out) =>
+                modules.some((module) => out.target_module == module)
+            ),
+        ];
 
-    intact_outs.forEach((out, index) => (out.index = index));
+        target_outs.forEach((out) => out.remove());
 
-    moved_outs
-      .map((o, index) => {
-        o.dettach();
-        o.index = intact_outs.length + index;
-        return o;
-      })
-      .forEach((o) => o.attach());
+        removed_chain.detach();
 
-    if (from_chain != to_chain) {
-      to_chain.modules = to_chain.modules;
-      moved_module.parent_chain = to_chain;
-      return true;
+        return removed_chain;
     }
 
-    return false;
-  }
+    move_module(
+        from_chain: number,
+        from_module: number | ModuleState,
+        to_chain: number | ChainState,
+        to_module: number
+    ) {
+        let moved_module =
+            from_module instanceof ModuleState
+                ? from_module
+                : this._chains[from_chain].modules[from_module];
 
-  add_out(destination: Omit<OutDestination, "cv">, target: OutTarget) {
-    let target_chain = this._chains[target.chain_index];
-    let target_module = target_chain?.modules[target.module_index];
+        if (to_chain instanceof ChainState) {
+            to_chain.insert_module(moved_module, to_module);
+        } else {
+            this._chains[to_chain].insert_module(moved_module, to_module);
+        }
 
-    if (!target_chain || !target_module) return;
+        if (from_chain != to_chain) {
+            this._chains[from_chain].update_modules();
+            return true;
+        }
 
-    let new_out = new OutState(destination);
-    new_out.index = this._outs.length;
-    new_out.target_module = target_module;
+        return false;
+    }
 
-    this._outs = [...this._outs, new_out];
+    add_out(module: ModuleState) {
+        let new_out = new OutState(this, module, this._outs.length);
 
-    new_out.attach();
+        this._outs = [...this._outs, new_out];
 
-    return new_out;
-  }
+        new_out.attach();
+    }
 
-  remove_out(id: number) {
-    let removed_out_index = this._outs.findIndex((out) => out.id == id);
+    remove_out(out: number | OutState) {
+        let index: number;
+        if (out instanceof OutState) {
+            index = this._outs.findIndex((_out) => _out == out);
+        } else {
+            index = out;
+        }
 
-    // if (removed_out_index == -1) return;
+        let removed_out = this._outs.splice(index, 1)[0];
 
-    let removed_out = this._outs.splice(removed_out_index, 1)[0];
+        this._outs = this._outs.map((out, index) => {
+            out.index = index;
+            return out;
+        });
 
-    removed_out.dettach();
+        removed_out.detach();
 
-    this.index_outs(removed_out.index);
-
-    return removed_out;
-  }
-
-  update_out(id: number, destination: RecursivePartial<OutDestination>) {
-    let updated_out = this._outs.find((out) => out.id == id);
-
-    if (updated_out == undefined) return;
-
-    updated_out.destination = {
-      gate: {
-        ...updated_out.destination.gate,
-        ...destination.gate,
-      },
-      cv: {
-        ...updated_out.destination.cv,
-      },
-    };
-
-    let removed_out_str = `o -r ${updated_out.index}`;
-    console.log(removed_out_str);
-
-    this.index_outs(updated_out.index);
-
-    let target_chain = updated_out.target_module?.parent_chain;
-    let target_module = updated_out.target_module;
-
-    let added_out_str = `o -n ${updated_out.destination.gate.pid}:${updated_out.destination.gate.channel}:${target_chain.index}:${target_module.index}:${target_chain.index}:${target_module.index}`;
-    console.log(added_out_str);
-
-    updated_out.index = this._outs.length - 1;
-  }
+        return removed_out;
+    }
 }
 
-const network = new NetworkState();
-
 class ChainState {
-  static id_counter = 0;
-  readonly id = ChainState.id_counter++;
-  index = $state(-1);
-  attached = false;
-  readonly parent_network: NetworkState;
+    static id_counter = 0;
+    readonly id = ChainState.id_counter++;
+    private _attached = false;
+    readonly parent: NetworkState;
 
-  modules = $state<ModuleState[]>([]);
+    index = $state(-1);
+    private _modules = $state<ModuleState[]>([]);
 
-  constructor(network: NetworkState) {
-    this.parent_network = network;
-  }
+    constructor(network: NetworkState, index: number) {
+        this.parent = network;
+        this.index = index;
 
-  attach() {
-    let str_repr = `c -n`;
-
-    console.log(str_repr);
-
-    if (true) {
-      this.attached = true;
+        $effect(() => {
+            this._modules.forEach((module, index) => (module.index = index));
+        });
     }
-  }
 
-  dettach() {
-    let c_idx = this.index;
-
-    let str_repr = `c -r ${c_idx}`;
-
-    console.log(str_repr);
-
-    if (true) {
-      this.attached = false;
+    get attached() {
+        return this._attached;
     }
-  }
 
-  remove() {
-    network.remove_chain(this.id);
-  }
+    get modules() {
+        return this._modules;
+    }
 
-  index_modules() {
-    this.modules = this.modules.map((module, index) => {
-      module.index = index;
-      return module;
-    });
-  }
+    update_modules() {
+        this._modules = this._modules;
+    }
 
-  add_module(type: keyof ModuleTypeMap | (keyof ModuleTypeMap)[]) {
-    let new_module = Array.isArray(type)
-      ? type.map((t, i) => new ModuleState(t, this, this.modules.length + i))
-      : [new ModuleState(type, this, this.modules.length)];
+    attach() {
+        let str_repr = `c -n`;
 
-    this.modules = [...this.modules, ...new_module];
+        console.log(str_repr);
 
-    new_module.forEach((module) => module.attach());
+        if (true) {
+            this._attached = true;
+        }
+    }
 
-    return new_module;
-  }
+    detach() {
+        let c_idx = this.index;
 
-  remove_module(id: number) {
-    let removed_module_index = this.modules.findIndex(
-      (module) => module.id == id
-    );
+        let str_repr = `c -r ${c_idx}`;
 
-    if (removed_module_index == -1) return;
+        console.log(str_repr);
 
-    let removed_module = this.modules.splice(removed_module_index, 1)[0];
+        if (true) {
+            this._attached = false;
+        }
+    }
 
-    let network = this.parent_network;
+    remove() {
+        this.parent.remove_chain(this);
+    }
 
-    let [moved_outs, intact_outs] = network._outs.reduce(
-      (acc, out, index) => {
-        if (out.target_module == removed_module) {
-          acc[0].push(out);
-          return acc;
+    insert_module(module: ModuleTypes | ModuleState, index?: number) {
+        if (index != undefined) {
+            if (index > this._modules.length) {
+                index = this._modules.length;
+            } else if (index < 0) {
+                index = 0;
+            }
+        } else {
+            index = this._modules.length;
         }
 
-        acc[1].push(out);
+        let new_module: ModuleState;
 
-        return acc;
-      },
-      [[], []] as [OutState[], OutState[]]
-    );
+        if (module instanceof ModuleState) {
+            new_module = module.remove();
+            new_module.index = index;
+            new_module.parent = this;
+        } else {
+            new_module = new ModuleState(module, this, index);
+        }
 
-    if (moved_outs.length) {
-      let removed_out_inddices = moved_outs.map((out) => out.index);
-      let removed_outs_str = removed_out_inddices
-        .map((out) => {
-          let str = `o -r ${out}`;
-          return str;
-        })
-        .join("\n");
+        this._modules.splice(index, 0, new_module);
 
-      console.log(removed_outs_str);
+        this._modules = this._modules;
+
+        new_module.attach();
+
+        let target_outs = new_module.parent.parent._detached_outs.filter(
+            (out) => out.target_module == new_module
+        );
+
+        new_module.parent.parent._detached_outs =
+            new_module.parent.parent._detached_outs.filter(
+                (out) => out.target_module != new_module
+            );
+
+        new_module.parent.parent._outs = [
+            ...new_module.parent.parent._outs,
+            ...target_outs,
+        ].map((out, index) => {
+            out.index = index;
+            return out;
+        });
+
+        target_outs.forEach((out) => out.attach());
+
+        return new_module;
     }
 
-    intact_outs.forEach((out, index) => (out.index = index));
+    remove_module(module: number | ModuleState) {
+        let removed_module: ModuleState;
+        if (module instanceof ModuleState) {
+            let _index = this._modules.findIndex(
+                (_module) => _module == module
+            );
 
-    removed_module.dettach();
+            removed_module = this._modules.splice(_index, 1)[0];
 
-    this.index_modules();
+            removed_module.index = _index;
+        } else {
+            removed_module = this._modules.splice(module, 1)[0];
+        }
 
-    return removed_module;
-  }
+        let target_outs = removed_module.parent.parent.outs
+            .filter((out) => out.target_module == removed_module)
+            .map((out) => out.remove());
+
+        removed_module.parent.parent._detached_outs = [
+            ...removed_module.parent.parent._detached_outs,
+            ...target_outs,
+        ];
+
+        this._modules = this._modules;
+
+        return removed_module;
+    }
 }
 
 export type ModuleTypeMap = {
-  PTH: [];
-  LFO: [
-    { name: "frequency"; value: number },
-    { name: "span"; value: number },
-    { name: "phase"; value: number },
-    { name: "offset"; value: number },
-    { name: "wave select"; value: 0 | 1 | 2 | 3 | 4 },
-    { name: "duty cycle"; value: number },
-    { name: "reset"; value: number },
-    { name: "mode"; value: 0 | 1 },
-    { name: "hold"; value: boolean }
-  ];
-  BCH: [];
-  PRO: [];
+    PTH: [];
+    LFO: [
+        { name: "frequency"; value: number },
+        { name: "span"; value: number },
+        { name: "phase"; value: number },
+        { name: "offset"; value: number },
+        { name: "wave select"; value: 0 | 1 | 2 | 3 | 4 },
+        { name: "duty cycle"; value: number },
+        { name: "reset"; value: number },
+        { name: "mode"; value: 0 | 1 },
+        { name: "hold"; value: boolean }
+    ];
+    BCH: [];
+    PRO: [];
 };
 
+export type ModuleTypes = keyof ModuleTypeMap;
+
 class ModuleState {
-  static id_counter = 0;
-  readonly id = ModuleState.id_counter++;
-  readonly type: keyof ModuleTypeMap;
-  parent_chain: ChainState | null = null;
-  index = -1;
-  show_outs_list = $state(false);
-  minimized = $state(false);
-  dragged = $state(false);
-  dot_menu_open = $state(false);
-  attached = false;
+    static id_counter = 0;
+    readonly id = ModuleState.id_counter++;
+    readonly type: keyof ModuleTypeMap;
+    private attached = false;
+    parent: ChainState;
 
-  parameters = $state<ParameterState[]>([]);
+    // states - -
+    index = $state(-1);
+    dragged = $state(false);
+    minimized = $state(false);
+    show_outs_list = $state(false);
+    dot_menu_open = $state(false);
 
-  constructor(
-    type: keyof ModuleTypeMap,
-    parent_chain: ChainState,
-    index: number
-  ) {
-    this.type = type;
-    this.parent_chain = parent_chain;
-    this.index = index;
-
-    this.parameters = module_type_map[type].map((struct, index) => {
-      let param = new ParameterState(struct.name, struct.value, index, this);
-      return param;
-    });
-  }
-
-  attach() {
-    let c_idx = this.parent_chain?.index;
-    let m_idx = this.index;
-    let parameters_str = this.parameters
-      .map((parameter) => parameter.toString())
-      .join(":");
-
-    let str_repr = `m -c ${c_idx} -i ${m_idx} ${this.type}${parameters_str}`;
-
-    console.log(str_repr);
-
-    if (true) {
-      this.attached = true;
+    constructor(type: ModuleTypes, parent: ChainState, index: number) {
+        this.type = type;
+        this.parent = parent;
+        this.index = index;
+        this.attach();
     }
-  }
 
-  dettach() {
-    let c_idx = this.parent_chain?.index;
-    let m_idx = this.index;
+    // attach / detach - places / lifts up the module from intercom state but doesnt care about the  client state,
+    // enables the client state to stay intact and we can optionally go back and forth between mirroring indiviual modules
 
-    let str_repr = `m -c ${c_idx} -r ${m_idx}`;
+    attach() {
+        if (this.attached) return;
+        let chain_index = this.parent.index;
+        let module_index = this.index;
 
-    console.log(str_repr);
+        let str_repr = `m -c ${chain_index} -i ${module_index}`;
 
-    if (true) {
-      this.attached = false;
+        console.log(str_repr);
+
+        this.attached = true;
     }
-  }
 
-  remove() {
-    this.parent_chain?.remove_module(this.id);
-    this.dettach();
-  }
+    detach() {
+        if (!this.attached) return;
+        let chain_index = this.parent.index;
+        let module_index = this.index;
 
-  toggle_show_outs() {
-    this.show_outs_list = !this.show_outs_list;
-    if (this.show_outs_list) {
-      drag_state.drag_available = false;
-    } else {
-      drag_state.drag_available = true;
+        let str_repr = `m -c ${chain_index} -r ${module_index}`;
+
+        console.log(str_repr);
+
+        this.attached = false;
     }
-  }
+
+    remove() {
+        this.parent.remove_module(this);
+        return this;
+    }
+
+    add_out() {
+        this.parent.parent.add_out(this);
+    }
 }
 
 const module_type_map: ModuleTypeMap = {
-  PTH: [],
-  PRO: [],
-  BCH: [],
-  LFO: [
-    { name: "frequency", value: 0.1 },
-    { name: "span", value: 0.5 },
-    { name: "phase", value: 0 },
-    { name: "offset", value: 0 },
-    { name: "wave select", value: 1 },
-    { name: "duty cycle", value: 0 },
-    { name: "reset", value: 0 },
-    { name: "mode", value: 0 },
-    { name: "hold", value: false },
-  ],
+    PTH: [],
+    PRO: [],
+    BCH: [],
+    LFO: [
+        { name: "frequency", value: 0.1 },
+        { name: "span", value: 0.5 },
+        { name: "phase", value: 0 },
+        { name: "offset", value: 0 },
+        { name: "wave select", value: 1 },
+        { name: "duty cycle", value: 0 },
+        { name: "reset", value: 0 },
+        { name: "mode", value: 0 },
+        { name: "hold", value: false },
+    ],
 };
 
 function debounce(window: number = 25) {
-  let timeout_id: number;
-  return function async(fn: (...args: any) => any) {
-    clearTimeout(timeout_id);
-    timeout_id = setTimeout(() => {
-      fn();
-    }, window);
-  };
+    let timeout_id: number;
+    return function async(fn: (...args: any) => any) {
+        clearTimeout(timeout_id);
+        timeout_id = setTimeout(() => {
+            fn();
+        }, window);
+    };
 }
 
 export class ParameterState {
-  value = $state<number>(0);
-  readonly name: string;
-  readonly parent_module: ModuleState;
-  readonly index: number;
-  private bouncer: ReturnType<typeof debounce>;
-  //   private attached: boolean = false;
+    value = $state<number>(0);
 
-  constructor(name: string, value: number, index: number, module: ModuleState) {
-    this.name = name;
-    this.value = value;
-    this.index = index;
-    this.parent_module = module;
-    this.bouncer = debounce();
-    // this.signal_intercom();
-  }
-
-  toString() {
-    let str_rep = `${+this.value}`;
-    return str_rep;
-  }
-
-  signal_intercom() {
-    let c_idx = this.parent_module.parent_chain?.index;
-    let m_idx = this.parent_module.index;
-    this.bouncer(() => {
-      console.log(`p -m ${c_idx}:${m_idx} -p ${this.index}:${this.value}`);
-    });
-  }
+    constructor(
+        name: string,
+        value: number,
+        index: number,
+        module: ModuleState
+    ) {}
 }
-
-type OutTarget = {
-  chain_index: number;
-  module_index: number;
-};
-
-type Periphial = {
-  pid: number | null;
-  channel: number | null;
-};
-
-type OutDestination = {
-  gate: Periphial;
-  cv: Periphial;
-};
 
 class OutState {
-  static id_counter = 0;
-  readonly id = OutState.id_counter++;
-  target_module = $state<ModuleState>();
-  destination: OutDestination;
-  index = $state(-1);
-  attached = false;
+    static id_counter = 0;
+    readonly id = OutState.id_counter++;
+    target_module = $state<ModuleState>();
+    index = $state(-1);
+    attached = false;
+    parent: NetworkState;
 
-  constructor(destination: Omit<OutDestination, "cv">) {
-    this.destination = { cv: { pid: null, channel: null }, ...destination };
-  }
+    constructor(network: NetworkState, module: ModuleState, index: number) {
+        this.parent = network;
+        this.target_module = module;
+        this.index = index;
+    }
 
-  attach() {
-    let gate = this.destination.gate;
-    let c_idx = this.target_module?.parent_chain?.index;
-    let m_idx = this.target_module?.index;
+    remove() {
+        return this.parent.remove_out(this);
+    }
 
-    let target_str = `${c_idx}:${m_idx}:${c_idx}:${m_idx}`;
+    attach() {
+        if (this.attached) return;
+        let c_idx = this.target_module?.parent.index;
+        let m_idx = this.target_module?.index;
 
-    let str_repr = `o -n ${gate.pid}:${gate.channel}:${target_str}`;
+        let str_repr = `o -n ${"_"}:${"_"}:${c_idx}:${m_idx}:${c_idx}:${m_idx}`;
 
-    console.log(str_repr);
-  }
+        console.log(str_repr);
 
-  dettach() {
-    let str_repr = `o -r ${this.index}`;
+        this.attached = true;
+    }
 
-    console.log(str_repr);
-  }
+    detach() {
+        if (!this.attached) return;
+        let o_idx = this.index;
 
-  remove() {
-    return network.remove_out(this.id);
-  }
+        let str_repr = `o -r ${o_idx}`;
+
+        console.log(str_repr);
+
+        this.attached = false;
+    }
 }
 
-export { network };
 export { NetworkState, ChainState, ModuleState, OutState };
