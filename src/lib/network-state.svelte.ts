@@ -3,6 +3,16 @@ import { drag_state } from "./drag-state.svelte";
 // TODO - Tree / TreeWalker
 // We need a network-tree, so we can walk up and down through chains-modules-outs
 
+const logger = {
+    cli: false,
+};
+
+function log_cli(msg: string) {
+    if (logger.cli) {
+        console.log(msg);
+    }
+}
+
 type RecursivePartial<T> = {
     [P in keyof T]?: RecursivePartial<T[P]>;
 };
@@ -166,7 +176,8 @@ class ChainState {
     attach() {
         let str_repr = `c -n`;
 
-        console.log(str_repr);
+        // console.log(str_repr);
+        log_cli(str_repr);
 
         if (true) {
             this._attached = true;
@@ -178,7 +189,8 @@ class ChainState {
 
         let str_repr = `c -r ${c_idx}`;
 
-        console.log(str_repr);
+        // console.log(str_repr);
+        log_cli(str_repr);
 
         if (true) {
             this._attached = false;
@@ -261,13 +273,15 @@ class ChainState {
             ...target_outs,
         ];
 
+        removed_module.detach();
+
         this._modules = this._modules;
 
         return removed_module;
     }
 }
 
-export type ModuleTypeMap = {
+export type ModuleTypeSignature = {
     PTH: [];
     LFO: [
         { name: "frequency"; value: number },
@@ -278,20 +292,21 @@ export type ModuleTypeMap = {
         { name: "duty cycle"; value: number },
         { name: "reset"; value: number },
         { name: "mode"; value: 0 | 1 },
-        { name: "hold"; value: boolean }
+        { name: "hold"; value: 0 | 1 }
     ];
     BCH: [];
     PRO: [];
 };
 
-export type ModuleTypes = keyof ModuleTypeMap;
+export type ModuleTypes = keyof ModuleTypeSignature;
 
 class ModuleState {
     static id_counter = 0;
     readonly id = ModuleState.id_counter++;
-    readonly type: keyof ModuleTypeMap;
+    readonly type: keyof ModuleTypeSignature;
     private attached = false;
     parent: ChainState;
+    private _parameters: ParameterState[];
 
     // states - -
     index = $state(-1);
@@ -305,6 +320,16 @@ class ModuleState {
         this.parent = parent;
         this.index = index;
         this.attach();
+
+        const signature = module_type_signature[type];
+        this._parameters = signature.map(
+            (struct, index) =>
+                new ParameterState(struct.name, struct.value, index, this)
+        );
+    }
+
+    get parameters() {
+        return this._parameters;
     }
 
     // attach / detach - places / lifts up the module from intercom state but doesnt care about the  client state,
@@ -317,7 +342,8 @@ class ModuleState {
 
         let str_repr = `m -c ${chain_index} -i ${module_index}`;
 
-        console.log(str_repr);
+        // console.log(str_repr);
+        log_cli(str_repr);
 
         this.attached = true;
     }
@@ -329,7 +355,8 @@ class ModuleState {
 
         let str_repr = `m -c ${chain_index} -r ${module_index}`;
 
-        console.log(str_repr);
+        // console.log(str_repr);
+        log_cli(str_repr);
 
         this.attached = false;
     }
@@ -344,7 +371,7 @@ class ModuleState {
     }
 }
 
-const module_type_map: ModuleTypeMap = {
+const module_type_signature: ModuleTypeSignature = {
     PTH: [],
     PRO: [],
     BCH: [],
@@ -353,17 +380,17 @@ const module_type_map: ModuleTypeMap = {
         { name: "span", value: 0.5 },
         { name: "phase", value: 0 },
         { name: "offset", value: 0 },
-        { name: "wave select", value: 1 },
+        { name: "wave select", value: 0 },
         { name: "duty cycle", value: 0 },
         { name: "reset", value: 0 },
         { name: "mode", value: 0 },
-        { name: "hold", value: false },
+        { name: "hold", value: 0 },
     ],
 };
 
 function debounce(window: number = 25) {
     let timeout_id: number;
-    return function async(fn: (...args: any) => any) {
+    return function (fn: (...args: any) => any) {
         clearTimeout(timeout_id);
         timeout_id = setTimeout(() => {
             fn();
@@ -371,15 +398,53 @@ function debounce(window: number = 25) {
     };
 }
 
+type ModulePointer = {
+    chain: number | ChainState;
+    module: number | ModuleState;
+};
+
 export class ParameterState {
-    value = $state<number>(0);
+    private _value = $state<number | ModuleState>(0);
+    index = -1;
+    parent: ModuleState;
+    name: string;
+    private bouncer: ReturnType<typeof debounce>;
 
     constructor(
         name: string,
-        value: number,
+        value: number | ModuleState,
         index: number,
-        module: ModuleState
-    ) {}
+        parent: ModuleState
+    ) {
+        this.name = name;
+        this._value = value;
+        this.index = index;
+        this.parent = parent;
+        this.bouncer = debounce();
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(v: number | ModuleState) {
+        let c_idx = this.parent.parent.index;
+        let m_idx = this.parent.index;
+
+        let _v = `${v}`;
+
+        if (v instanceof ModuleState) {
+            _v = `[${v.parent.index}:${v.index}]`;
+        }
+
+        this.bouncer(() => {
+            let str_repr = `p -m ${c_idx}:${m_idx} -v ${this.index}:${_v}`;
+
+            console.log(str_repr);
+        });
+
+        this._value = v;
+    }
 }
 
 class OutState {
@@ -407,7 +472,8 @@ class OutState {
 
         let str_repr = `o -n ${"_"}:${"_"}:${c_idx}:${m_idx}:${c_idx}:${m_idx}`;
 
-        console.log(str_repr);
+        // console.log(str_repr);
+        log_cli(str_repr);
 
         this.attached = true;
     }
@@ -418,7 +484,8 @@ class OutState {
 
         let str_repr = `o -r ${o_idx}`;
 
-        console.log(str_repr);
+        // console.log(str_repr);
+        log_cli(str_repr);
 
         this.attached = false;
     }

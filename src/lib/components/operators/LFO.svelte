@@ -1,5 +1,8 @@
 <script lang="ts">
-    import type { ParameterState } from "$lib/network-state.svelte";
+    import {
+        ModuleState,
+        type ParameterState,
+    } from "$lib/network-state.svelte";
     import Pulse from "../inputs/Pulse.svelte";
     import Select from "../inputs/Select.svelte";
     import Slider from "../inputs/Slider.svelte";
@@ -7,19 +10,16 @@
 
     let { parameters } = $props<{ parameters: ParameterState[] }>();
 
-    function on_change(p: ParameterState) {
-        return function (value: number) {
-            p.value = value;
-            p.signal_intercom();
-        };
+    function type_check(parameter: ParameterState) {
+        return parameter.value instanceof ModuleState ? 0 : parameter.value;
     }
 </script>
 
 <div class="lfo stack">
     <div class="button-row stack">
         <Select
-            onchange={({ value }) => on_change(parameters[4])(value)}
-            index={parameters[4].value}
+            onchange={({ value }) => (parameters[4].value = value)}
+            index={type_check(parameters[4])}
             items={[
                 { label: "⟋", value: 0 },
                 { label: "⟍", value: 1 },
@@ -29,56 +29,54 @@
             ]}
         ></Select>
         <Select
-            onchange={({ value }) => on_change(parameters[7])(value)}
-            index={parameters[7].value}
+            onchange={({ value }) => (parameters[7].value = value)}
+            index={type_check(parameters[7])}
             items={[
                 { label: "∞", value: 0 },
                 { label: "¼", value: 1 },
             ]}
         ></Select>
-        <Pulse onchange={(value) => on_change(parameters[6])(+value)}
-            >reset</Pulse
-        >
+        <Pulse onchange={() => (parameters[6].value = 1)}>reset</Pulse>
         <Toggle
-            onchange={(value) => on_change(parameters[8])(+value)}
-            toggle={!!parameters[8].value}
+            onchange={(value) => (parameters[8].value = +value)}
+            toggle={!!type_check(parameters[8])}
         >
             hold
         </Toggle>
     </div>
     <hr />
-    <div class="sliders">
-        <div class="slider-row">
-            <div>
-                <div>{parameters[0].name}</div>
-                <Slider
-                    value={parameters[0].value}
-                    onchange={on_change(parameters[0])}
-                ></Slider>
-            </div>
-            <div>
-                <div>{parameters[1].name}</div>
-                <Slider
-                    value={parameters[1].value}
-                    onchange={on_change(parameters[1])}
-                ></Slider>
-            </div>
+
+    <div class="sliders"></div>
+    <div class="slider-row">
+        <div>
+            <div>{parameters[0].name}</div>
+            <Slider
+                onchange={(value) => (parameters[0].value = value)}
+                value={type_check(parameters[0])}
+            ></Slider>
         </div>
-        <div class="slider-row">
-            <div>
-                <div>{parameters[2].name}</div>
-                <Slider
-                    value={parameters[2].value}
-                    onchange={on_change(parameters[2])}
-                ></Slider>
-            </div>
-            <div>
-                <div>{parameters[3].name}</div>
-                <Slider
-                    value={parameters[3].value}
-                    onchange={on_change(parameters[3])}
-                ></Slider>
-            </div>
+        <div>
+            <div>{parameters[1].name}</div>
+            <Slider
+                onchange={(value) => (parameters[1].value = value)}
+                value={type_check(parameters[1])}
+            ></Slider>
+        </div>
+    </div>
+    <div class="slider-row">
+        <div>
+            <div>{parameters[2].name}</div>
+            <Slider
+                onchange={(value) => (parameters[2].value = value)}
+                value={type_check(parameters[2])}
+            ></Slider>
+        </div>
+        <div>
+            <div>{parameters[3].name}</div>
+            <Slider
+                onchange={(value) => (parameters[3].value = value)}
+                value={type_check(parameters[3])}
+            ></Slider>
         </div>
     </div>
 </div>

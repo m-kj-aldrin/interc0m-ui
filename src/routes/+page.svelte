@@ -15,12 +15,15 @@
     let c0 = network.add_chain();
     let c1 = network.add_chain();
 
+    c0.insert_module("LFO");
+
     c1.insert_module("BCH");
     c1.insert_module("PTH");
     c1.insert_module("PRO").add_out();
 
     console.log("\n\n");
-    network.move_module(1, 1, 0, 0);
+    network.move_module(1, 1, 0, 1);
+    network.move_module(0, 0, 1, 2);
 </script>
 
 <div
