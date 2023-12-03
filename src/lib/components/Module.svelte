@@ -85,6 +85,40 @@
             }
         );
     }
+
+    type State =
+        | "minimized"
+        | "full"
+        | "minimized.show-outs-list"
+        | "minimized.show-dots-menu"
+        | "full.show-outs-list"
+        | "full.show-dots-menu";
+
+    let _state = $state<State>("full");
+
+    $effect(() => {
+        if (!module.minimized) {
+            if (!module.show_outs_list) {
+                _state = "full";
+            }
+            if (module.show_outs_list) {
+                _state = "full.show-outs-list";
+            }
+            if (module.dot_menu_open) {
+                _state = "full.show-dots-menu";
+            }
+        } else {
+            if (!module.show_outs_list) {
+                _state = "minimized";
+            }
+            if (module.show_outs_list) {
+                _state = "minimized.show-outs-list";
+            }
+            if (module.dot_menu_open) {
+                _state = "minimized.show-dots-menu";
+            }
+        }
+    });
 </script>
 
 <div
@@ -92,6 +126,7 @@
     class:dragged={module.dragged}
     class:minimized={module.minimized}
     data-dnd-id={module.id}
+    data-state={_state}
 >
     <header
         class="padding stack"
@@ -205,15 +240,17 @@
         font-size: var(--text-size-1);
 
         > header {
-            cursor: move;
             --gap: var(--gap-2);
             --direction: row;
             align-self: normal;
 
             background-color: var(--color-gray-light);
             padding-inline: var(--gap-2);
-            &:hover {
-                background-color: var(--color-gray-lightest);
+            &[draggable="true"] {
+                cursor: move;
+                &:hover {
+                    background-color: var(--color-gray-lightest);
+                }
             }
         }
     }

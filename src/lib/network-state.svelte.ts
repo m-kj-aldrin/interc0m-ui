@@ -4,7 +4,7 @@ import { drag_state } from "./drag-state.svelte";
 // We need a network-tree, so we can walk up and down through chains-modules-outs
 
 const logger = {
-    cli: false,
+    cli: true,
 };
 
 function log_cli(msg: string) {
@@ -72,6 +72,7 @@ class NetworkState {
 
         this._chains = this._chains;
 
+        // TODO - refactor this, get attached outs to specified module
         let modules = removed_chain.modules;
         let target_outs = [
             ...this._outs.filter((out) =>
@@ -148,17 +149,56 @@ class ChainState {
     readonly id = ChainState.id_counter++;
     private _attached = false;
     readonly parent: NetworkState;
+    private _input: {
+        gate: PeriphialUnion | { pid: null; channel: null };
+        cv: PeriphialUnion | { pid: null; channel: null };
+    };
 
     index = $state(-1);
     private _modules = $state<ModuleState[]>([]);
 
-    constructor(network: NetworkState, index: number) {
+    constructor(
+        network: NetworkState,
+        index: number,
+        input?: { gate?: PeriphialUnion; cv?: PeriphialUnion }
+    ) {
         this.parent = network;
         this.index = index;
+
+        this._input = {
+            gate: {
+                pid: null,
+                channel: null,
+            },
+            cv: {
+                pid: null,
+                channel: null,
+            },
+            ...input,
+        };
 
         $effect(() => {
             this._modules.forEach((module, index) => (module.index = index));
         });
+    }
+
+    set input({ cv, gate }: { gate?: PeriphialUnion; cv?: PeriphialUnion }) {
+        this._input = {
+            cv: {
+                ...this._input.cv,
+                ...cv,
+            },
+            gate: {
+                ...this._input.gate,
+                ...gate,
+            },
+        };
+
+        this.edit();
+    }
+
+    get input() {
+        return this._input;
     }
 
     get attached() {
@@ -173,10 +213,30 @@ class ChainState {
         this._modules = this._modules;
     }
 
+    // TODO - this might be a option inside attach ???
+    edit() {
+        let cv = `${this._input.cv.pid ?? "_"}:${
+            this._input.cv.channel ?? "_"
+        }`;
+
+        let gate = `${this._input.gate.pid ?? "_"}:${
+            this._input.gate.channel ?? "_"
+        }`;
+
+        let modules_str = this.modules
+            .map((module) => {
+                return module.toString();
+            })
+            .join(",");
+
+        let str_repr = `c -e ${this.index}:cv${cv},gt${gate}>${modules_str}`;
+
+        log_cli(str_repr);
+    }
+
     attach() {
         let str_repr = `c -n`;
 
-        // console.log(str_repr);
         log_cli(str_repr);
 
         if (true) {
@@ -189,7 +249,6 @@ class ChainState {
 
         let str_repr = `c -r ${c_idx}`;
 
-        // console.log(str_repr);
         log_cli(str_repr);
 
         if (true) {
@@ -228,6 +287,7 @@ class ChainState {
 
         new_module.attach();
 
+        // TODO - refactor this, get attached outs to specified module
         let target_outs = new_module.parent.parent._detached_outs.filter(
             (out) => out.target_module == new_module
         );
@@ -264,6 +324,7 @@ class ChainState {
             removed_module = this._modules.splice(module, 1)[0];
         }
 
+        // TODO - refactor this, get attached outs to specified module
         let target_outs = removed_module.parent.parent.outs
             .filter((out) => out.target_module == removed_module)
             .map((out) => out.remove());
@@ -321,6 +382,13 @@ class ModuleState {
         this.index = index;
         this.attach();
 
+        $effect(() => {
+            drag_state.drag_available = !this.show_outs_list;
+        });
+        $effect(() => {
+            drag_state.drag_available = !this.dot_menu_open;
+        });
+
         const signature = module_type_signature[type];
         this._parameters = signature.map(
             (struct, index) =>
@@ -330,6 +398,18 @@ class ModuleState {
 
     get parameters() {
         return this._parameters;
+    }
+
+    toString() {
+        let parameters_str = this._parameters
+            .map((parameter) => {
+                return `${parameter.value}`;
+            })
+            .join(":");
+
+        let str_repr = `${this.type}>${parameters_str}`;
+
+        return str_repr;
     }
 
     // attach / detach - places / lifts up the module from intercom state but doesnt care about the  client state,
@@ -342,7 +422,6 @@ class ModuleState {
 
         let str_repr = `m -c ${chain_index} -i ${module_index}`;
 
-        // console.log(str_repr);
         log_cli(str_repr);
 
         this.attached = true;
@@ -355,7 +434,6 @@ class ModuleState {
 
         let str_repr = `m -c ${chain_index} -r ${module_index}`;
 
-        // console.log(str_repr);
         log_cli(str_repr);
 
         this.attached = false;
@@ -440,12 +518,40 @@ export class ParameterState {
         this.bouncer(() => {
             let str_repr = `p -m ${c_idx}:${m_idx} -v ${this.index}:${_v}`;
 
-            console.log(str_repr);
+            log_cli(str_repr);
         });
 
         this._value = v;
     }
 }
+
+type PeriphialADC = {
+    pid: 0;
+    channel: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+};
+
+type PeriphialDAC = {
+    pid: 1;
+    channel: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
+};
+
+type Periphials = {
+    adc: PeriphialADC;
+    dac: PeriphialDAC;
+};
+
+type PeriphialUnion = Periphials[keyof Periphials];
+
+const perihial_map: Periphials = {
+    adc: {
+        pid: 0,
+        channel: 0,
+    },
+    dac: {
+        pid: 1,
+        channel: 0,
+    },
+};
 
 class OutState {
     static id_counter = 0;
@@ -472,7 +578,6 @@ class OutState {
 
         let str_repr = `o -n ${"_"}:${"_"}:${c_idx}:${m_idx}:${c_idx}:${m_idx}`;
 
-        // console.log(str_repr);
         log_cli(str_repr);
 
         this.attached = true;
@@ -484,7 +589,6 @@ class OutState {
 
         let str_repr = `o -r ${o_idx}`;
 
-        // console.log(str_repr);
         log_cli(str_repr);
 
         this.attached = false;
