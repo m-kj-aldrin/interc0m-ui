@@ -19,7 +19,7 @@
 
     c1.insert_module("BCH");
     c1.insert_module("PTH");
-    c1.insert_module("PRO").add_out();
+    c1.insert_module("PRO").add_out({ pid: 0, channel: 4 });
 
     network.move_module(1, 1, 0, 1);
     network.move_module(0, 0, 1, 2);

@@ -145,9 +145,15 @@
         max-width: 3ch;
         text-align: center;
         border-bottom: 1px currentColor solid;
+        margin-bottom: -1px;
         padding: 0;
         border-radius: 0;
     }
+
+    label {
+        white-space: nowrap;
+    }
+
     .chain {
         padding: var(--gap-2);
         gap: var(--gap-2);
@@ -171,7 +177,7 @@
 
         align-self: normal;
 
-        padding-block: var(--gap-2);
+        padding: var(--gap-2);
         border-radius: 1px;
 
         background-color: var(--color-gray-light);

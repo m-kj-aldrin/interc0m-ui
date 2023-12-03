@@ -1,6 +1,10 @@
 <script lang="ts">
     import { drag_state } from "$lib/drag-state.svelte";
-    import type { ModuleState, NetworkState } from "$lib/network-state.svelte";
+    import type {
+        ModuleState,
+        NetworkState,
+        PeriphialUnion,
+    } from "$lib/network-state.svelte";
     import { getContext } from "svelte";
 
     import Icon from "./icons/Icon.svelte";
@@ -36,11 +40,14 @@
 
     let outs = $derived(outs_filter());
 
-    let new_pid = $state(0);
-    let new_ch = $state(0);
+    let new_pid = $state<PeriphialUnion["pid"]>(0);
+    let new_ch = $state<PeriphialUnion["channel"]>(0);
 
     function add_out() {
-        module.add_out();
+        module.add_out({ pid: new_pid, channel: new_ch });
+
+        new_pid = 0;
+        new_ch = 0;
     }
 
     let bound_outside_handler: typeof click_outside;

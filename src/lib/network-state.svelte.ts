@@ -115,8 +115,13 @@ class NetworkState {
         return false;
     }
 
-    add_out(module: ModuleState) {
-        let new_out = new OutState(this, module, this._outs.length);
+    add_out(module: ModuleState, destination: PeriphialUnion) {
+        let new_out = new OutState(
+            this,
+            module,
+            this._outs.length,
+            destination
+        );
 
         this._outs = [...this._outs, new_out];
 
@@ -444,8 +449,8 @@ class ModuleState {
         return this;
     }
 
-    add_out() {
-        this.parent.parent.add_out(this);
+    add_out(destination: PeriphialUnion) {
+        this.parent.parent.add_out(this, destination);
     }
 }
 
@@ -540,7 +545,7 @@ type Periphials = {
     dac: PeriphialDAC;
 };
 
-type PeriphialUnion = Periphials[keyof Periphials];
+export type PeriphialUnion = Periphials[keyof Periphials];
 
 const perihial_map: Periphials = {
     adc: {
@@ -557,14 +562,21 @@ class OutState {
     static id_counter = 0;
     readonly id = OutState.id_counter++;
     target_module = $state<ModuleState>();
+    destination: PeriphialUnion;
     index = $state(-1);
     attached = false;
     parent: NetworkState;
 
-    constructor(network: NetworkState, module: ModuleState, index: number) {
+    constructor(
+        network: NetworkState,
+        module: ModuleState,
+        index: number,
+        destination: PeriphialUnion
+    ) {
         this.parent = network;
         this.target_module = module;
         this.index = index;
+        this.destination = destination;
     }
 
     remove() {
@@ -576,7 +588,9 @@ class OutState {
         let c_idx = this.target_module?.parent.index;
         let m_idx = this.target_module?.index;
 
-        let str_repr = `o -n ${"_"}:${"_"}:${c_idx}:${m_idx}:${c_idx}:${m_idx}`;
+        let { pid, channel } = this.destination;
+
+        let str_repr = `o -n ${pid}:${channel}:${c_idx}:${m_idx}:${c_idx}:${m_idx}`;
 
         log_cli(str_repr);
 

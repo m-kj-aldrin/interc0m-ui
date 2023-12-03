@@ -1,43 +1,19 @@
 <script lang="ts">
-    import { getContext } from "svelte";
     import Icon from "./icons/Icon.svelte";
-    import type { ChangeEventHandler } from "svelte/elements";
-    import type { NetworkState, OutState } from "$lib/network-state.svelte";
-
-    let network = getContext("network") as NetworkState;
+    import type { OutState } from "$lib/network-state.svelte";
 
     let { out } = $props<{ out: OutState }>();
 
     let new_pid = $state(0);
     let new_ch = $state(0);
 
-    // function remove_out() {
-    //     network.remove_out(out.id);
-    // }
-
     type ChangeEvent = Event & {
         currentTarget: EventTarget & HTMLInputElement;
     };
 
-    function update_pid(e: ChangeEvent) {
-        let value = +e.currentTarget.value;
+    function update_pid(e: ChangeEvent) {}
 
-        // network.update_out(out.id, {
-        //     gate: {
-        //         pid: value,
-        //     },
-        // });
-    }
-
-    function update_ch(e: ChangeEvent) {
-        let value = +e.currentTarget.value;
-
-        // network.update_out(out.id, {
-        //     gate: {
-        //         channel: value,
-        //     },
-        // });
-    }
+    function update_ch(e: ChangeEvent) {}
 </script>
 
 <div class="out padding stack">
@@ -46,7 +22,7 @@
             pid:<input
                 onchange={update_pid}
                 type="text"
-                value={""}
+                value={out.destination.pid}
                 maxlength="2"
             />
         </label>
@@ -54,12 +30,11 @@
             ch:<input
                 onchange={update_ch}
                 type="text"
-                value={""}
+                value={out.destination.channel}
                 maxlength="2"
             />
         </label>
     </div>
-    <!-- <div>id: {out.id} idx: {out.index}</div> -->
     <button class="remove-out" onclick={() => out.remove()}>
         <Icon type="cross"></Icon>
     </button>
