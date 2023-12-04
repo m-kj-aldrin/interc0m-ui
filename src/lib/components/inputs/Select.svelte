@@ -8,10 +8,12 @@
         items,
         index = 0,
         onchange,
+        reset = false,
     } = $props<{
         items: Item[];
         index?: number;
         onchange?: (item: Item) => void;
+        reset?: boolean;
     }>();
 
     let selected_item = $state(items[index]);
@@ -21,6 +23,9 @@
         onchange?.(item);
         open = false;
         window.removeEventListener("click", click_outside, { capture: true });
+        if (reset) {
+            selected_item = items[0];
+        }
     }
 
     let open = $state(false);
@@ -86,6 +91,8 @@
         gap: var(--gap-0);
 
         padding: var(--gap-0);
+
+        z-index: 10;
     }
 
     .item {

@@ -132,7 +132,9 @@
                 </label>
             </div>
         </div>
-        <button class="remove-chain" onclick={() => chain.remove()}>&Cross;</button>
+        <button class="remove-chain" onclick={() => chain.remove()}
+            >&Cross;</button
+        >
         <!-- <div>idx: {chain.index}</div> -->
     </header>
     <div class="modules stack">
@@ -196,7 +198,7 @@
         }
     }
 
-    .remove-chain{
+    .remove-chain {
         color: var(--color-error);
         width: 3ch;
         height: 3ch;
@@ -206,7 +208,7 @@
 
     .modules {
         flex-grow: 1;
-        --gap: var(--gap-2);
+        --gap: var(--gap-1);
         outline: 1px transparent solid;
         transition-property: background-color, outline;
         transition-duration: 200ms;

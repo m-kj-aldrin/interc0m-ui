@@ -108,7 +108,7 @@ class NetworkState {
         }
 
         if (from_chain != to_chain) {
-            this._chains[from_chain].update_modules();
+            this._chains[from_chain].index_modules();
             return true;
         }
 
@@ -182,9 +182,9 @@ class ChainState {
             ...input,
         };
 
-        $effect(() => {
-            this._modules.forEach((module, index) => (module.index = index));
-        });
+        // $effect(() => {
+        //     this._modules.forEach((module, index) => (module.index = index));
+        // });
     }
 
     set input({ cv, gate }: { gate?: PeriphialUnion; cv?: PeriphialUnion }) {
@@ -214,8 +214,11 @@ class ChainState {
         return this._modules;
     }
 
-    update_modules() {
-        this._modules = this._modules;
+    index_modules() {
+        this._modules = this._modules.map((module, i) => {
+            module.index = i;
+            return module;
+        });
     }
 
     // TODO - this might be a option inside attach ???
@@ -280,7 +283,7 @@ class ChainState {
 
         if (module instanceof ModuleState) {
             new_module = module.remove();
-            new_module.index = index;
+            // new_module.index = index;
             new_module.parent = this;
         } else {
             new_module = new ModuleState(module, this, index);
@@ -288,7 +291,8 @@ class ChainState {
 
         this._modules.splice(index, 0, new_module);
 
-        this._modules = this._modules;
+        // this._modules = this._modules;
+        this.index_modules();
 
         new_module.attach();
 
@@ -324,7 +328,7 @@ class ChainState {
 
             removed_module = this._modules.splice(_index, 1)[0];
 
-            removed_module.index = _index;
+            // removed_module.index = _index;
         } else {
             removed_module = this._modules.splice(module, 1)[0];
         }
@@ -341,7 +345,8 @@ class ChainState {
 
         removed_module.detach();
 
-        this._modules = this._modules;
+        // this._modules = this._modules;
+        this.index_modules();
 
         return removed_module;
     }
@@ -387,12 +392,12 @@ class ModuleState {
         this.index = index;
         this.attach();
 
-        $effect(() => {
-            drag_state.drag_available = !this.show_outs_list;
-        });
-        $effect(() => {
-            drag_state.drag_available = !this.dot_menu_open;
-        });
+        // $effect(() => {
+        //     drag_state.drag_available = !this.show_outs_list;
+        // });
+        // $effect(() => {
+        //     drag_state.drag_available = !this.dot_menu_open;
+        // });
 
         const signature = module_type_signature[type];
         this._parameters = signature.map(

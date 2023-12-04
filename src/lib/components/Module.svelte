@@ -144,6 +144,8 @@
     >
         <div class="type">{module.type}</div>
 
+        <div>{module.index}</div>
+
         <div class="outs">
             <button
                 class="symbol"
