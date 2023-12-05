@@ -3,23 +3,46 @@
         ModuleState,
         type ParameterState,
     } from "$lib/network-state.svelte";
+    import { getContext } from "svelte";
     import Pulse from "../inputs/Pulse.svelte";
     import Select from "../inputs/Select.svelte";
     import Slider from "../inputs/Slider.svelte";
     import Toggle from "../inputs/Toggle.svelte";
+    import type { MenuState } from "../menu-state.svelte";
 
     let { parameters } = $props<{ parameters: ParameterState[] }>();
 
-    function type_check(parameter: ParameterState) {
-        return parameter.value instanceof ModuleState ? 0 : parameter.value;
+    function type_check(value: ParameterState["value"]) {
+        // console.log("inside typecheck", value);
+
+        return value instanceof ModuleState ? value.pointer : value;
     }
+
+    let menu_state = getContext("menu_state") as MenuState;
+
+    function select_module(parameter: ParameterState) {
+        menu_state.state = "picking.module";
+        menu_state.fn = (module: ModuleState) => {
+            parameter.value = module;
+        };
+    }
+
+    // $effect(() => {
+    //     console.log("par 0", parameters[0].value);
+    // });
+
+    // setTimeout(() => {
+    //     setInterval(() => {
+    //         parameters[0].value = Math.random();
+    //     }, 1500);
+    // }, 500);
 </script>
 
 <div class="lfo stack">
     <div class="button-row stack">
         <Select
             onchange={({ value }) => (parameters[4].value = value)}
-            index={type_check(parameters[4])}
+            index={type_check(parameters[4].value)}
             items={[
                 { label: "⟋", value: 0 },
                 { label: "⟍", value: 1 },
@@ -30,7 +53,7 @@
         ></Select>
         <Select
             onchange={({ value }) => (parameters[7].value = value)}
-            index={type_check(parameters[7])}
+            index={type_check(parameters[7].value)}
             items={[
                 { label: "∞", value: 0 },
                 { label: "¼", value: 1 },
@@ -39,7 +62,7 @@
         <Pulse onchange={() => (parameters[6].value = 1)}>reset</Pulse>
         <Toggle
             onchange={(value) => (parameters[8].value = +value)}
-            toggle={!!type_check(parameters[8])}
+            toggle={!!type_check(parameters[8].value)}
         >
             hold
         </Toggle>
@@ -50,16 +73,21 @@
     <div class="slider-row">
         <div>
             <div>{parameters[0].name}</div>
-            <Slider
-                onchange={(value) => (parameters[0].value = value)}
-                value={type_check(parameters[0])}
-            ></Slider>
+            <div class="stack-h">
+                <button onclick={() => select_module(parameters[0])}>
+                    &cir;
+                </button>
+                <Slider
+                    onchange={(value) => (parameters[0].value = value)}
+                    value={type_check(parameters[0].value)}
+                ></Slider>
+            </div>
         </div>
         <div>
             <div>{parameters[1].name}</div>
             <Slider
                 onchange={(value) => (parameters[1].value = value)}
-                value={type_check(parameters[1])}
+                value={type_check(parameters[1].value)}
             ></Slider>
         </div>
     </div>
@@ -68,14 +96,14 @@
             <div>{parameters[2].name}</div>
             <Slider
                 onchange={(value) => (parameters[2].value = value)}
-                value={type_check(parameters[2])}
+                value={type_check(parameters[2].value)}
             ></Slider>
         </div>
         <div>
             <div>{parameters[3].name}</div>
             <Slider
                 onchange={(value) => (parameters[3].value = value)}
-                value={type_check(parameters[3])}
+                value={type_check(parameters[3].value)}
             ></Slider>
         </div>
     </div>

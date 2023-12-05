@@ -17,7 +17,20 @@
         onchange: (value: number) => void;
     }>();
 
+    let str_mode = $state(false);
+    let str_value = $state("");
+
     let x = bucket(value, 100);
+    $effect(() => {
+        if (typeof value == "string") {
+            str_value = value;
+            str_mode = true;
+        } else {
+            str_mode = false;
+        }
+
+        x.value = value;
+    });
 
     function clamp01(x: number) {
         return Math.min(Math.max(x, 0), 1);
@@ -78,17 +91,23 @@
     <g>
         <rect width="64" height="16" fill="var(--color-gray-light)" rx="1"
         ></rect>
-        {#if type == "bar"}
-            <rect
-                class="bar"
-                style:--x={x.value}
-                width={x.value * 64}
-                height="16"
-            ></rect>
+        {#if !str_mode}
+            {#if type == "bar"}
+                <rect
+                    class="bar"
+                    style:--x={x.value}
+                    width={x.value * 64}
+                    height="16"
+                ></rect>
+            {/if}
         {/if}
         <g transform="translate(32 12)">
             <text dy="0" font-size="10" text-anchor="middle">
-                {x.value.toFixed(4)}
+                {#if !str_mode}
+                    {x.value.toFixed(4)}
+                {:else}
+                    {str_value}
+                {/if}
             </text>
         </g>
     </g>

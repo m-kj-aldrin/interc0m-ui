@@ -19,6 +19,7 @@ export default function (
     opt: Partial<typeof defauls_opt> = {}
 ) {
     let state_value = $state(value);
+    // console.log("inside bucket", value);
 
     const target_bucket = new Map<number, number>();
     let bucket_count = 0;
@@ -35,6 +36,8 @@ export default function (
      */
     function set(new_value: number) {
         if (typeof new_value != "number") return;
+        // console.log("inside bucket set", new_value);
+
         const local_previous_bucket_index = bucket_count - 1;
         const local_bucket_index = bucket_count++;
 

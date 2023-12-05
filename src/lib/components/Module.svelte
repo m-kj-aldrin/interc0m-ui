@@ -11,6 +11,7 @@
 
     import * as Operators from "./operators/index";
     import Out from "./Out.svelte";
+    import type { MenuState } from "./menu-state.svelte";
 
     let { module } = $props<{
         module: ModuleState;
@@ -126,9 +127,26 @@
             }
         }
     });
+
+    const menu_state = getContext("menu_state") as MenuState;
+
+    let picking = $derived(menu_state.state == "picking.module");
+
+    $effect(() => {
+        module_el.addEventListener("pointerdown", (e) => {
+            if (picking) {
+                menu_state.state = "idle";
+                menu_state.fn(module);
+                menu_state.fn = () => null;
+            }
+        });
+    });
+
+    let module_el: HTMLElement;
 </script>
 
 <div
+    bind:this={module_el}
     class="module stack border"
     class:dragged={module.dragged}
     class:minimized={module.minimized}

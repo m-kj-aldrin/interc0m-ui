@@ -5,10 +5,13 @@
     import Chain from "$lib/components/Chain.svelte";
     import { setContext } from "svelte";
     import Select from "$lib/components/inputs/Select.svelte";
+    import { MenuState } from "$lib/components/menu-state.svelte";
 
     const network = new NetworkState();
+    const menu_state = new MenuState();
 
     setContext("network", network);
+    setContext("menu_state", menu_state);
 
     NetworkState.clear_counter();
     network.reset();

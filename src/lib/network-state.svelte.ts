@@ -410,6 +410,12 @@ class ModuleState {
         return this._parameters;
     }
 
+    get pointer() {
+        let c_idx = this.parent.index;
+        let m_idx = this.index;
+        return `[${c_idx}:${m_idx}]`;
+    }
+
     toString() {
         let parameters_str = this._parameters
             .map((parameter) => {
@@ -512,10 +518,16 @@ export class ParameterState {
     }
 
     get value() {
+        if (this._value instanceof ModuleState) {
+            this.signal();
+        }
+
         return this._value;
     }
 
-    set value(v: number | ModuleState) {
+    signal() {
+        let v = this._value;
+
         let c_idx = this.parent.parent.index;
         let m_idx = this.parent.index;
 
@@ -530,8 +542,11 @@ export class ParameterState {
 
             log_cli(str_repr);
         });
+    }
 
+    set value(v: number | ModuleState) {
         this._value = v;
+        this.signal();
     }
 }
 
