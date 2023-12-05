@@ -417,13 +417,14 @@ class ModuleState {
     }
 
     toString() {
-        let parameters_str = this._parameters
-            .map((parameter) => {
-                return `${parameter.value}`;
-            })
-            .join(":");
+        let parameters_str =
+            this._parameters
+                ?.map((parameter) => {
+                    return `${parameter.value}`;
+                })
+                .join(":") ?? "";
 
-        let str_repr = `${this.type}>${parameters_str}`;
+        let str_repr = `${this.type}${parameters_str}`;
 
         return str_repr;
     }
@@ -436,7 +437,7 @@ class ModuleState {
         let chain_index = this.parent.index;
         let module_index = this.index;
 
-        let str_repr = `m -c ${chain_index} -i ${module_index}`;
+        let str_repr = `m -c ${chain_index} -i ${module_index}:${this.toString()}`;
 
         log_cli(str_repr);
 
