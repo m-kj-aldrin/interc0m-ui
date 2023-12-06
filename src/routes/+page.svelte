@@ -19,25 +19,23 @@
     let c0 = network.add_chain();
     let c1 = network.add_chain();
 
-    c0.insert_module("LFO");
+    let c0m0 = c0.insert_module("LFO");
+    let c0m1 = c0.insert_module("PTH");
 
     c1.insert_module("BCH");
     c1.insert_module("PTH");
     c1.insert_module("PRO").add_out({ pid: 0, channel: 4 });
 
     setTimeout(() => {
-        // c1.insert_module("PTH");
-        network.add_chain();
+        c0m0.parameters[0].value = c0m1;
     }, 0);
-
-    network.move_module(1, 0, 0, 1);
-    // network.move_module(0, 0, 1, 2);
 </script>
 
 <div
     class="chains stack"
     ondragover={(e) => e.preventDefault()}
     role="application"
+    data-picking={menu_state.state == "picking.module"}
 >
     {#each network.chains as chain (chain.id)}
         <Chain {chain}>
@@ -81,10 +79,20 @@
 </div>
 
 <style lang="scss">
+    [data-picking="true"] {
+        :global(*) {
+            cursor: crosshair !important;
+        }
+    }
+
     .chains {
         --direction: row;
         align-items: normal;
         gap: var(--gap-2);
+
+        // :global(.chain) {
+        //     color: red !important;
+        // }
     }
 
     .new-module {

@@ -519,9 +519,9 @@ export class ParameterState {
     }
 
     get value() {
-        if (this._value instanceof ModuleState) {
-            this.signal();
-        }
+        // if (this._value instanceof ModuleState) {
+        //     this.signal();
+        // }
 
         return this._value;
     }

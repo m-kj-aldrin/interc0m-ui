@@ -17,19 +17,20 @@
         onchange: (value: number) => void;
     }>();
 
-    let str_mode = $state(false);
-    let str_value = $state("");
+    class T {
+        value = $state(value);
+    }
 
-    let x = bucket(value, 100);
+    let x = new T();
+    let buck = bucket(value, 100);
+
+    let str_mode = $derived(typeof value == "string");
+
     $effect(() => {
-        if (typeof value == "string") {
-            str_value = value;
-            str_mode = true;
-        } else {
-            str_mode = false;
+        buck.value = value;
+        if (str_mode) {
+            x.value = value;
         }
-
-        x.value = value;
     });
 
     function clamp01(x: number) {
@@ -40,39 +41,28 @@
 
     function pointer_down(e: PEvent) {
         e.currentTarget.setPointerCapture(e.pointerId);
-
         let box = e.currentTarget.getBoundingClientRect();
-
         let mouse = {
             x: (e.clientX - box.x) / box.width,
             y: (e.clientY - box.y) / box.height,
         };
-
         let c_x = clamp01(mouse.x);
-        x.value = c_x;
-
+        buck.value = c_x;
         onchange(c_x);
-
         e.currentTarget.addEventListener("pointermove", pointer_move);
         e.currentTarget.addEventListener("pointerup", pointer_up);
-
         let tresholded = false;
 
         function pointer_move(e: PEvent) {
             mouse.x = (e.clientX - box.x) / box.width;
             mouse.y = (e.clientY - box.y) / box.height;
-
             c_x = clamp01(mouse.x);
-            x.value = c_x;
-
+            buck.value = c_x;
             if (c_x < 1 && c_x > 0) {
                 tresholded = false;
             }
-
             if (tresholded) return;
-
             onchange(c_x);
-
             if (c_x >= 1 || c_x <= 0) {
                 tresholded = true;
             }
@@ -80,7 +70,6 @@
 
         function pointer_up(e: PEvent) {
             e.currentTarget.releasePointerCapture(e.pointerId);
-
             e.currentTarget.removeEventListener("pointermove", pointer_move);
             e.currentTarget.removeEventListener("pointerup", pointer_up);
         }
@@ -95,18 +84,18 @@
             {#if type == "bar"}
                 <rect
                     class="bar"
-                    style:--x={x.value}
-                    width={x.value * 64}
+                    style:--x={buck.value}
+                    width={buck.value * 64}
                     height="16"
                 ></rect>
             {/if}
         {/if}
         <g transform="translate(32 12)">
             <text dy="0" font-size="10" text-anchor="middle">
-                {#if !str_mode}
-                    {x.value.toFixed(4)}
+                {#if str_mode}
+                    {x.value}
                 {:else}
-                    {str_value}
+                    {buck.value.toFixed(4)}
                 {/if}
             </text>
         </g>

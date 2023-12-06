@@ -15,6 +15,7 @@
     function type_check(value: ParameterState["value"]) {
         // console.log("inside typecheck", value);
 
+        // return 0;
         return value instanceof ModuleState ? value.pointer : value;
     }
 

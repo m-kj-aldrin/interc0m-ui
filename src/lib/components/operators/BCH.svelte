@@ -1,5 +1,7 @@
 <script lang="ts">
-    let { parameters } = $props<{ parameters: (number | string)[] }>();
+    import type { ParameterState } from "$lib/network-state.svelte";
+
+    let { parameters } = $props<{ parameters: ParameterState[] }>();
 </script>
 
 <div>bch operator</div>

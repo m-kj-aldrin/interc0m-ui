@@ -17,6 +17,12 @@
         module: ModuleState;
     }>();
 
+    let op = Operators[module.type];
+    // let op = $state();
+    // $effect(async () => {
+    //     op = (await import(`./operators/${module.type}.svelte`)).default;
+    // });
+
     let network = getContext("network") as NetworkState;
 
     function toggle_minimize_module(module: ModuleState) {
@@ -104,54 +110,50 @@
 
     let _state = $state<State>("full");
 
-    $effect(() => {
-        if (!module.minimized) {
-            if (!module.show_outs_list) {
-                _state = "full";
-            }
-            if (module.show_outs_list) {
-                _state = "full.show-outs-list";
-            }
-            if (module.dot_menu_open) {
-                _state = "full.show-dots-menu";
-            }
-        } else {
-            if (!module.show_outs_list) {
-                _state = "minimized";
-            }
-            if (module.show_outs_list) {
-                _state = "minimized.show-outs-list";
-            }
-            if (module.dot_menu_open) {
-                _state = "minimized.show-dots-menu";
-            }
-        }
-    });
+    // $effect(() => {
+    //     if (!module.minimized) {
+    //         if (!module.show_outs_list) {
+    //             _state = "full";
+    //         }
+    //         if (module.show_outs_list) {
+    //             _state = "full.show-outs-list";
+    //         }
+    //         if (module.dot_menu_open) {
+    //             _state = "full.show-dots-menu";
+    //         }
+    //     } else {
+    //         if (!module.show_outs_list) {
+    //             _state = "minimized";
+    //         }
+    //         if (module.show_outs_list) {
+    //             _state = "minimized.show-outs-list";
+    //         }
+    //         if (module.dot_menu_open) {
+    //             _state = "minimized.show-dots-menu";
+    //         }
+    //     }
+    // });
 
     const menu_state = getContext("menu_state") as MenuState;
 
-    let picking = $derived(menu_state.state == "picking.module");
-
-    $effect(() => {
-        module_el.addEventListener("pointerdown", (e) => {
-            if (picking) {
-                menu_state.state = "idle";
-                menu_state.fn(module);
-                menu_state.fn = () => null;
-            }
-        });
-    });
-
-    let module_el: HTMLElement;
+    function m_picker(e: PointerEvent) {
+        if (menu_state.state == "picking.module") {
+            console.log("helo");
+            menu_state.state = "idle";
+            menu_state.fn(module);
+            menu_state.fn = () => null;
+        }
+    }
 </script>
 
 <div
-    bind:this={module_el}
     class="module stack border"
     class:dragged={module.dragged}
     class:minimized={module.minimized}
     data-dnd-id={module.id}
     data-state={_state}
+    data-pickable={menu_state.state == "picking.module"}
+    onpointerdown={m_picker}
 >
     <header
         class="padding stack"
@@ -246,10 +248,10 @@
 
     {#if !module.minimized && !(module.type == "PTH")}
         <div class="operator padding">
-            <svelte:component
-                this={Operators[module.type]}
-                parameters={module.parameters}
-            ></svelte:component>
+            {#if op}
+                <svelte:component this={op} parameters={module.parameters}
+                ></svelte:component>
+            {/if}
         </div>
     {/if}
 </div>
@@ -265,6 +267,16 @@
         box-shadow: var(--shadow-0);
         width: var(--module-width);
         font-size: var(--text-size-1);
+
+        &[data-pickable="true"] {
+            // border-color: var(--color-info-light);
+            // color: var(--color-info);
+            border-color: currentColor;
+            &:hover {
+                // border-color: var(--color-info);
+                color: var(--color-info);
+            }
+        }
 
         > header {
             --gap: var(--gap-2);
@@ -338,6 +350,7 @@
             background-color: transparent;
 
             cursor: pointer;
+            cursor: context-menu;
             padding: 2px;
         }
 
@@ -373,6 +386,7 @@
 
             &.minimize-module {
                 background-color: var(--color-info);
+                cursor: n-resize;
             }
         }
     }
@@ -380,6 +394,7 @@
     .module.minimized {
         button.minimize-module {
             background-color: var(--color-ok);
+            cursor: s-resize;
         }
     }
 
