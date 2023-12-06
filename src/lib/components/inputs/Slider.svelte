@@ -22,7 +22,10 @@
     }
 
     let x = new T();
-    let buck = bucket(value, 100);
+    let init_v = typeof value == "number" ? value : 0;
+    let buck = bucket(init_v, 100);
+    // let buck = $state(value)
+    // let buck = new T();
 
     let str_mode = $derived(typeof value == "string");
 
