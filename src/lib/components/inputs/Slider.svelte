@@ -27,7 +27,7 @@
     // let buck = $state(value)
     // let buck = new T();
 
-    let str_mode = $derived(typeof value == "string");
+    let str_mode = $derived(Array.isArray(value));
 
     $effect(() => {
         buck.value = value;
@@ -96,7 +96,7 @@
         <g transform="translate(32 12)">
             <text dy="0" font-size="10" text-anchor="middle">
                 {#if str_mode}
-                    {x.value}
+                    [{x.value[0]},{x.value[1]}]
                 {:else}
                     {buck.value.toFixed(4)}
                 {/if}

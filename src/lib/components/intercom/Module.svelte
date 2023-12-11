@@ -129,7 +129,7 @@
   >
     <div class="type">{module.type}</div>
 
-    <div>{module.index}</div>
+    <div>idx: {module.index}</div>
 
     <div class="outs">
       <button
