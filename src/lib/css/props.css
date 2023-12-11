@@ -1,0 +1,26 @@
+:root {
+    --color-white: hsl(0, 0%, 99%);
+    --color-black: #141414;
+    --color-gray-lightest: #e8e8e8;
+    --color-gray-light: #dfdfdf;
+    --color-info: #ecb461;
+    --color-info-light: #f8d5ad;
+    --color-error: #e85636;
+    --color-ok: #6ac662;
+}
+
+:root {
+    --shadow-0: 0 0 8px 0px hsla(0 0% 0% / 0.03);
+}
+
+:root {
+    --module-width: 228px;
+
+    --text-size-0: 8px;
+    --text-size-1: 10px;
+
+    --gap-0: 2px;
+    --gap-1: 4px;
+    --gap-2: 8px;
+    --gap-3: 16px;
+}

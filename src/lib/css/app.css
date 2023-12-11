@@ -1,0 +1,86 @@
+@import "./props.css";
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: var(--gap-2);
+
+    font-family: monospace;
+
+    display: grid;
+
+    line-height: 1;
+    color: var(--color-black);
+    background-color: var(--color-white);
+}
+
+input,
+button {
+    font-family: inherit;
+    font-size: inherit;
+    color: currentColor;
+
+    border-color: currentColor;
+    border-style: solid;
+    border-width: 1px;
+
+    border-radius: 2px;
+    background-color: transparent;
+    line-height: 1;
+    padding-block: var(--gap-1);
+}
+
+button {
+    cursor: pointer;
+    background-color: var(--color-white);
+}
+
+button:where(:active) {
+    /* background-color: var(--color-black);
+    color: var(--color-white);
+    border-color: var(--color-black); */
+}
+
+input {
+    font-family: inherit;
+    font-size: inherit;
+    color: currentColor;
+    border: none;
+}
+
+.stack,
+[class*="stack-"] {
+    --direction: column;
+    --gap: var(--gap-1);
+
+    display: flex;
+    flex-direction: var(--direction);
+    gap: var(--gap);
+
+    align-items: center;
+}
+
+.stack-h {
+    --direction: row;
+}
+
+.border {
+    border-radius: 1px;
+    border: 1px var(--color-gray-light) solid;
+}
+
+hr {
+    color: var(--color-gray-light);
+    border: none;
+    border-bottom: 1px currentColor solid;
+    width: 100%;
+    margin: 0;
+}

@@ -1,5 +1,5 @@
 <script lang="ts">
-    import bucket from "$lib/bucket.svelte";
+    import bucket from "$lib/animation/bucket.svelte";
 
     let {
         value,
