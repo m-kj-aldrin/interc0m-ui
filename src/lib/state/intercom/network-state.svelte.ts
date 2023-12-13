@@ -495,6 +495,40 @@ class ModuleState {
         );
     }
 
+    // config(config: ModuleConfig, silent = false) {
+    //     this.operator = config;
+
+    //     let signature = module_type_signature[config.type];
+    //     this._parameters = signature.map((struct, index) => {
+    //         let _s = config.parameters?.[index]
+    //             ? config.parameters[index]
+    //             : struct.value;
+
+    //         return new ParameterState(struct.name, _s, index, this);
+    //     });
+
+    //     if (!silent) {
+    //         this.attach();
+    //     } else {
+    //         this.attached = true;
+    //     }
+    // }
+
+    // toString() {
+    //     if (!this.operator?.type) return;
+
+    //     let parameters_str =
+    //         this._parameters
+    //             ?.map((parameter) => {
+    //                 return `${parameter.value}`;
+    //             })
+    //             .join(":") ?? "";
+
+    //     let str_repr = `${this.operator.type}${parameters_str}`;
+
+    //     return str_repr;
+    // }
+
     get parameters() {
         return this._parameters;
     }
