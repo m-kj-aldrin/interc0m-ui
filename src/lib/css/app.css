@@ -56,7 +56,8 @@ input {
     border: none;
 }
 
-.stack {
+.stack,
+[class*="stack-"] {
     --direction: column;
     --gap: var(--gap-1);
 
@@ -65,6 +66,10 @@ input {
     gap: var(--gap);
 
     align-items: center;
+}
+
+.stack-h {
+    --direction: row;
 }
 
 .border {

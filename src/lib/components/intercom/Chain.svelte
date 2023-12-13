@@ -1,13 +1,6 @@
 <script lang="ts">
-  import { drag_state } from "$lib/drag-state.svelte";
-  import {
-    network,
-    type ChainState,
-    type NetworkState,
-  } from "$lib/network-state.svelte";
-  import { getContext } from "svelte";
-
-  // let network = getContext("network") as NetworkState;
+  import type { ChainState } from "$lib/network-state.svelte";
+  import { drag_state } from "$lib/state/drag-state.svelte";
 
   let { chain } = $props<{ chain: ChainState }>();
 
@@ -57,16 +50,34 @@
           : targetIndex;
     }
 
-    let res = network.move_module(
-      drag_state.dragged_module.id,
-      targetIndex,
-      drag_state.dragged_chain,
-      chain
+    let new_chain = drag_state.dragged_chain.parent.move_module(
+      drag_state.dragged_chain.index,
+      drag_state.dragged_module,
+      chain,
+      targetIndex
     );
 
-    if (res) {
+    if (new_chain) {
       drag_state.dragged_chain = chain;
     }
+  }
+
+  type ChangeEvent = Event & {
+    currentTarget: EventTarget & HTMLElement;
+    target: HTMLInputElement;
+  };
+
+  function on_input(e: ChangeEvent) {
+    let [target, type] = e.target.name.split(".");
+    let value = +e.target.value;
+
+    // console.log({ target, type, value });
+
+    chain.input = {
+      [target]: {
+        [type]: value,
+      },
+    };
   }
 </script>
 
@@ -82,20 +93,39 @@
   class:dragging={drag_state.dragged_chain}
 >
   <header class="stack">
-    <div class="input stack">
+    <div class="input stack" onchange={on_input}>
       <div class="cv stack">
         <div>cvin&nbsp;</div>
-        <div class="pid">midi</div>
-        <div class="ch">4</div>
+        <label>
+          pid<input name="cv.pid" type="text" value={chain.input.cv?.pid} />
+        </label>
+        <label>
+          ch<input
+            type="text"
+            name="cv.channel"
+            value={chain.input.cv?.channel}
+            maxlength="2"
+          />
+        </label>
       </div>
       <div>|</div>
       <div class="gt stack">
         <div>gtin&nbsp;</div>
-        <div class="pid">adc</div>
-        <div class="ch">7</div>
+        <label>
+          pid<input type="text" name="gate.pid" value={chain.input.gate?.pid} />
+        </label>
+        <label>
+          ch<input
+            type="text"
+            name="gate.channel"
+            value={chain.input.gate?.channel}
+            maxlength="2"
+          />
+        </label>
       </div>
     </div>
-    <button onclick={() => chain.remove()}>remove</button>
+    <button class="remove-chain" onclick={() => chain.remove()}>&Cross;</button>
+    <!-- <div>idx: {chain.index}</div> -->
   </header>
   <div class="modules stack">
     <slot />
@@ -103,23 +133,35 @@
 </div>
 
 <style lang="scss">
+  input {
+    max-width: 3ch;
+    text-align: center;
+    border-bottom: 1px currentColor solid;
+    margin-bottom: -1px;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  label {
+    white-space: nowrap;
+  }
+
   .chain {
     padding: var(--gap-2);
     gap: var(--gap-2);
     box-shadow: var(--shadow-0);
     background-color: var(--color-white);
+
+    user-select: none;
   }
   .chain.dragging .modules {
-    // background-color: color-mix(
-    //     in oklab,
-    //     var(--color-info) 30%,
-    //     var(--color-white)
-    // );
     background-color: color-mix(
       in oklab,
       var(--color-gray-light) 20%,
       var(--color-white)
     );
+
+    outline: 1px var(--color-gray-lightest) solid;
   }
 
   header {
@@ -127,7 +169,7 @@
 
     align-self: normal;
 
-    padding-block: var(--gap-2);
+    padding: var(--gap-2);
     border-radius: 1px;
 
     background-color: var(--color-gray-light);
@@ -146,9 +188,20 @@
     }
   }
 
+  .remove-chain {
+    color: var(--color-error);
+    width: 3ch;
+    height: 3ch;
+    display: grid;
+    place-content: center;
+  }
+
   .modules {
     flex-grow: 1;
-    --gap: var(--gap-2);
-    transition: background-color 200ms ease;
+    --gap: var(--gap-1);
+    outline: 1px transparent solid;
+    transition-property: background-color, outline;
+    transition-duration: 200ms;
+    transition-timing-function: ease;
   }
 </style>
