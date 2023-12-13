@@ -6,8 +6,6 @@
     import Chain from "$lib/components/intercom/Chain.svelte";
     import Module from "$lib/components/intercom/Module.svelte";
     import { NetworkState } from "$lib/state/intercom/network-state.svelte";
-    import { flip } from "svelte/animate";
-    import { fade } from "svelte/transition";
 
     const network = new NetworkState();
     const menu_state = new MenuState();
@@ -92,10 +90,6 @@
         --direction: row;
         align-items: normal;
         gap: var(--gap-2);
-
-        // :global(.chain) {
-        //     color: red !important;
-        // }
     }
 
     .new-module {
@@ -108,7 +102,6 @@
         gap: var(--gap-1);
 
         .plus-icon {
-            // height: 2ch;
             aspect-ratio: 1/1;
             display: grid;
             place-content: center;
