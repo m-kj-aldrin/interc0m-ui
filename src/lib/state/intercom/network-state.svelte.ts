@@ -44,6 +44,57 @@ class NetworkState {
         OutState.id_counter = 0;
     }
 
+    // config(out_conf: NetworkConfig) {
+    //     NetworkState.clear_counter();
+
+    //     this._chains = out_conf.chains.map((chain_conf, i) => {
+    //         let new_chain = new ChainState(this, i);
+    //         new_chain.config(chain_conf, true);
+
+    //         return new_chain;
+    //     });
+
+    //     this._outs = out_conf.outs
+    //         .map((out_conf, i) => {
+    //             let new_out = new OutState(this, i);
+    //             let target_module: ModuleState;
+
+    //             if (out_conf.target instanceof ModuleState) {
+    //                 target_module = out_conf.target;
+    //             } else {
+    //                 target_module =
+    //                     this._chains[out_conf.target.chain_index].modules[
+    //                         out_conf.target.module_index
+    //                     ];
+    //             }
+
+    //             if (!target_module) return;
+
+    //             new_out.config({
+    //                 target: target_module,
+    //                 destination: out_conf.destination,
+    //             });
+
+    //             return new_out;
+    //         })
+    //         .filter((out) => out != undefined);
+
+    //     let repr = this.toString();
+
+    //     log_cli(repr);
+    // }
+
+    // toString() {
+    //     let chain_str_repr = this._chains
+    //         .map((chain) => chain.toString())
+    //         .join(";");
+
+    //     let outs_str_repr = this._outs.map((out) => out.toString()).join(";");
+    //     // let outs_str_repr = "";
+
+    //     return `${chain_str_repr};${outs_str_repr}`;
+    // }
+
     index_chains() {
         this._chains.forEach((chain, i) => (chain.index = i));
     }
