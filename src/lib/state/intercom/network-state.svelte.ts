@@ -1,6 +1,5 @@
 import { drag_state } from "../drag-state.svelte";
 
-
 // TODO - Tree / TreeWalker
 // We need a network-tree, so we can walk up and down through chains-modules-outs
 
@@ -240,6 +239,47 @@ class ChainState {
             });
         });
     }
+
+    //     config(config: ChainConfig, silent = false) {
+    //         this._modules = config.modules.map((module_conf, i) => {
+    //             let new_module = new ModuleState(this, i);
+    //             new_module.config(module_conf, true);
+    //             return new_module;
+    //         });
+
+    //         if (config.inputs) {
+    //             this._input = {
+    //                 gate: { pid: null, channel: null },
+    //                 cv: { pid: null, channel: null },
+    //                 ...config.inputs,
+    //             };
+    //         }
+
+    //         if (!silent) {
+    //             this.attach();
+    //         } else {
+    //             this._attached = true;
+    //         }
+    //     }
+    // toString() {
+    //         let cv = `${this._input.cv.pid ?? "_"}:${
+    //             this._input.cv.channel ?? "_"
+    //         }`;
+
+    //         let gate = `${this._input.gate.pid ?? "_"}:${
+    //             this._input.gate.channel ?? "_"
+    //         }`;
+
+    //         let modules_str = this.modules
+    //             .map((module) => {
+    //                 return module.toString();
+    //             })
+    //             .join(",");
+
+    //         let str_repr = `cv${cv},gt${gate}>${modules_str}`;
+
+    //         return str_repr;
+    //     }
 
     set input({ cv, gate }: { gate?: PeriphialUnion; cv?: PeriphialUnion }) {
         this._input = {
