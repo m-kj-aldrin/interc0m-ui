@@ -1,21 +1,18 @@
 <script lang="ts">
-    import {
-        ModuleState,
-        type ParameterState,
-    } from "$lib/network-state.svelte";
     import { getContext } from "svelte";
     import Pulse from "$lib/components/inputs/Pulse.svelte";
     import Slider from "$lib/components/inputs/Slider.svelte";
     import Toggle from "$lib/components/inputs/Toggle.svelte";
     import Select from "$lib/components/inputs/Select.svelte";
     import type { MenuState } from "$lib/state/menu-state.svelte";
+    import {
+        ModuleState,
+        ParameterState,
+    } from "$lib/state/intercom/network-state.svelte";
 
     let { parameters } = $props<{ parameters: ParameterState[] }>();
 
     function type_check(value: ParameterState["value"]) {
-        // console.log("inside typecheck", value);
-
-        // return 0;
         return value instanceof ModuleState ? value.pointer : value;
     }
 
@@ -27,16 +24,6 @@
             parameter.value = module;
         };
     }
-
-    // $effect(() => {
-    //     console.log("par 0", parameters[0].value);
-    // });
-
-    // setTimeout(() => {
-    //     setInterval(() => {
-    //         parameters[0].value = Math.random();
-    //     }, 1500);
-    // }, 500);
 </script>
 
 <div class="lfo stack">

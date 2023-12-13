@@ -1,11 +1,13 @@
 <script lang="ts">
     import "$lib/css/app.css";
-    import { NetworkState } from "$lib/network-state.svelte";
     import { setContext } from "svelte";
     import Select from "$lib/components/inputs/Select.svelte";
     import { MenuState } from "$lib/state/menu-state.svelte";
     import Chain from "$lib/components/intercom/Chain.svelte";
     import Module from "$lib/components/intercom/Module.svelte";
+    import { NetworkState } from "$lib/state/intercom/network-state.svelte";
+    import { flip } from "svelte/animate";
+    import { fade } from "svelte/transition";
 
     const network = new NetworkState();
     const menu_state = new MenuState();
